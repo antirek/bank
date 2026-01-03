@@ -36,6 +36,16 @@
             <h3>{{ business.name }}</h3>
             <div class="business-actions">
               <router-link
+                :to="`/my-businesses/${business.businessId}/dialogs`"
+                class="btn-icon dialogs-link"
+                title="Диалоги"
+              >
+                💬
+                <span v-if="business.unreadDialogsCount > 0" class="unread-badge-small">
+                  {{ business.unreadDialogsCount }}
+                </span>
+              </router-link>
+              <router-link
                 :to="`/businesses/${business.businessId}/edit`"
                 class="btn-icon"
                 title="Редактировать"
@@ -88,6 +98,19 @@ const loadBusinesses = async () => {
       }
     });
     businesses.value = response.data.data || [];
+    
+    // Загружаем количество непрочитанных диалогов для каждого бизнеса
+    await Promise.all(
+      businesses.value.map(async (business) => {
+        try {
+          const dialogsResponse = await api.get(`/businesses/${business.businessId}/dialogs`);
+          const dialogs = dialogsResponse.data.data || [];
+          business.unreadDialogsCount = dialogs.reduce((sum, d) => sum + (d.unreadCount || 0), 0);
+        } catch (err) {
+          business.unreadDialogsCount = 0;
+        }
+      })
+    );
   } catch (err) {
     error.value = err.response?.data?.error || 'Ошибка при загрузке бизнесов';
   } finally {
@@ -228,6 +251,26 @@ h1 {
 .business-actions {
   display: flex;
   gap: 0.5rem;
+  align-items: center;
+}
+
+.dialogs-link {
+  position: relative;
+}
+
+.unread-badge-small {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #f44336;
+  color: white;
+  border-radius: 10px;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  min-width: 18px;
+  text-align: center;
+  line-height: 1.2;
 }
 
 .btn-icon {

@@ -19,24 +19,45 @@
         </div>
 
         <div class="business-actions">
-          <button
-            v-if="authStore.isAuthenticated && !isSubscribed"
-            @click="handleSubscribe"
-            class="btn btn-primary"
-            :disabled="subscribing"
-          >
-            {{ subscribing ? 'Подписка...' : '+ Подписаться' }}
-          </button>
-          <span v-else-if="authStore.isAuthenticated && isSubscribed" class="subscribed-badge">
-            ✓ Вы подписаны
-          </span>
-          <router-link
-            v-else
-            to="/login"
-            class="btn btn-primary"
-          >
-            Войти для подписки
-          </router-link>
+          <div class="actions-row">
+            <!-- Если пользователь - владелец бизнеса, показываем кнопку "Обращения" -->
+            <router-link
+              v-if="authStore.isAuthenticated && isOwner"
+              :to="`/my-businesses/${business.businessId}/dialogs`"
+              class="btn btn-primary"
+            >
+              📨 Обращения
+            </router-link>
+            <!-- Если пользователь - не владелец, показываем кнопку "Начать диалог" -->
+            <button
+              v-else-if="authStore.isAuthenticated && !isOwner"
+              @click="handleStartDialog"
+              class="btn btn-primary"
+              :disabled="startingDialog"
+            >
+              {{ startingDialog ? 'Открытие...' : '💬 Начать диалог' }}
+            </button>
+            <!-- Кнопка подписки только для не-владельцев -->
+            <button
+              v-if="authStore.isAuthenticated && !isOwner && !isSubscribed"
+              @click="handleSubscribe"
+              class="btn btn-secondary"
+              :disabled="subscribing"
+            >
+              {{ subscribing ? 'Подписка...' : '+ Подписаться' }}
+            </button>
+            <span v-else-if="authStore.isAuthenticated && !isOwner && isSubscribed" class="subscribed-badge">
+              ✓ Вы подписаны
+            </span>
+            <!-- Для неавторизованных пользователей -->
+            <router-link
+              v-if="!authStore.isAuthenticated"
+              to="/login"
+              class="btn btn-primary"
+            >
+              Войти
+            </router-link>
+          </div>
         </div>
       </div>
     </div>
@@ -45,17 +66,31 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import api from '../api';
 
 const route = useRoute();
+const router = useRouter();
 const authStore = useAuthStore();
 const business = ref(null);
 const loading = ref(true);
 const error = ref('');
 const subscribing = ref(false);
 const isSubscribed = ref(false);
+const startingDialog = ref(false);
+
+// Проверяем, является ли текущий пользователь владельцем бизнеса
+const isOwner = computed(() => {
+  // Ждем, пока пользователь загрузится (если идет восстановление)
+  if (authStore.isRestoring) {
+    return false;
+  }
+  if (!authStore.isAuthenticated || !business.value || !authStore.user) {
+    return false;
+  }
+  return business.value.ownerId === authStore.user.userId;
+});
 
 const loadBusiness = async () => {
   loading.value = true;
@@ -64,6 +99,14 @@ const loadBusiness = async () => {
   try {
     const response = await api.get(`/businesses/slug/${route.params.slug}`);
     business.value = response.data.data;
+    
+    // Отладочная информация
+    console.log('Business loaded:', {
+      businessId: business.value?.businessId,
+      ownerId: business.value?.ownerId,
+      currentUserId: authStore.user?.userId,
+      isOwner: business.value?.ownerId === authStore.user?.userId
+    });
     
     // Проверяем подписку, если пользователь авторизован
     if (authStore.isAuthenticated) {
@@ -101,6 +144,25 @@ const handleSubscribe = async () => {
     alert(err.response?.data?.error || 'Ошибка при подписке');
   } finally {
     subscribing.value = false;
+  }
+};
+
+const handleStartDialog = async () => {
+  if (!authStore.isAuthenticated || isOwner.value) {
+    return;
+  }
+
+  startingDialog.value = true;
+  
+  try {
+    const response = await api.post(`/businesses/${business.value.businessId}/dialogs/start`);
+    const dialogId = response.data.data.dialogId;
+    // Переходим на страницу диалога
+    router.push(`/dialogs/${dialogId}`);
+  } catch (err) {
+    alert(err.response?.data?.error || 'Ошибка при создании диалога');
+  } finally {
+    startingDialog.value = false;
   }
 };
 
@@ -168,6 +230,22 @@ h1 {
 .business-actions {
   padding-top: 2rem;
   border-top: 1px solid #e0e0e0;
+}
+
+.actions-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.btn-secondary {
+  background: #f5f5f5;
+  color: #333;
+  border: 1px solid #e0e0e0;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #e0e0e0;
 }
 
 .btn {

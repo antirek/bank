@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import SmsCode from '../models/SmsCode.js';
 import User from '../models/User.js';
+import mms3Client from '../config/mms3.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret-key';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
@@ -68,14 +69,53 @@ export const verifySmsCode = async (phone, code) => {
   
   if (!user) {
     // Создаем нового пользователя
+    const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Создаем пользователя в mms3 (userId для mms3 не должен содержать точку)
+    const mms3UserId = userId.replace(/\./g, '_');
+    
+    try {
+      await mms3Client.post('/users', {
+        userId: mms3UserId,
+        name: phone,
+        type: 'user'
+      });
+    } catch (error) {
+      // Если пользователь уже существует в mms3, это нормально
+      if (error.response?.status !== 409) {
+        console.error('Error creating user in mms3:', error.response?.data || error.message);
+      }
+    }
+    
     user = new User({
-      userId: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      userId,
       phone,
       name: '',
+      mms3UserId,
       lastLoginAt: new Date()
     });
     await user.save();
   } else {
+    // Если у пользователя нет mms3UserId, создаем его
+    if (!user.mms3UserId) {
+      const mms3UserId = user.userId.replace(/\./g, '_');
+      try {
+        await mms3Client.post('/users', {
+          userId: mms3UserId,
+          name: user.name || user.phone,
+          type: 'user'
+        });
+        user.mms3UserId = mms3UserId;
+      } catch (error) {
+        if (error.response?.status !== 409) {
+          console.error('Error creating user in mms3:', error.response?.data || error.message);
+        } else {
+          // Пользователь уже существует, просто сохраняем mms3UserId
+          user.mms3UserId = mms3UserId;
+        }
+      }
+    }
+    
     // Обновляем время последнего входа
     user.lastLoginAt = new Date();
     await user.save();

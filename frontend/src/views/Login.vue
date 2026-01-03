@@ -1,6 +1,12 @@
 <template>
   <div class="login-page">
-    <div class="login-card">
+    <div v-if="authStore.isRestoring" class="login-card">
+      <p>Загрузка...</p>
+    </div>
+    <div v-else-if="authStore.isAuthenticated" class="login-card">
+      <p>Вы уже авторизованы. Перенаправление...</p>
+    </div>
+    <div v-else class="login-card">
       <h1>Вход в Bank</h1>
       <p class="subtitle">Система общения бизнеса и клиентов</p>
 
@@ -59,7 +65,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 
@@ -71,6 +77,26 @@ const code = ref('');
 const codeSent = ref(false);
 const loading = ref(false);
 const error = ref('');
+
+// Если пользователь уже авторизован, перенаправляем на главную
+onMounted(async () => {
+  // Ждем восстановления пользователя, если идет процесс восстановления
+  if (authStore.token && !authStore.user && !authStore.isRestoring) {
+    await authStore.restoreUser();
+  }
+  
+  // Если пользователь авторизован, перенаправляем
+  if (authStore.isAuthenticated) {
+    router.push('/');
+  }
+});
+
+// Следим за изменением статуса авторизации
+watch(() => authStore.isAuthenticated, (isAuth) => {
+  if (isAuth) {
+    router.push('/');
+  }
+});
 
 const handleSubmit = async () => {
   error.value = '';

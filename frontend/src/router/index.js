@@ -54,6 +54,29 @@ const routes = [
     name: 'Profile',
     component: () => import('../views/Profile.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/dialogs/:dialogId',
+    name: 'DialogView',
+    component: () => import('../views/DialogView.vue'),
+    meta: { requiresAuth: true },
+    props: true
+  },
+  {
+    path: '/my-businesses/:businessId/dialogs',
+    name: 'BusinessDialogs',
+    component: () => import('../views/BusinessDialogs.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/my-businesses/:businessId/dialogs/:dialogId',
+    name: 'BusinessDialogView',
+    component: () => import('../views/DialogView.vue'),
+    meta: { requiresAuth: true },
+    props: (route) => ({
+      dialogId: route.params.dialogId,
+      backUrl: `/my-businesses/${route.params.businessId}/dialogs`
+    })
   }
 ];
 
@@ -63,8 +86,13 @@ const router = createRouter({
 });
 
 // Navigation guard для проверки авторизации
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
+  
+  // Если есть токен, но нет пользователя, пытаемся восстановить
+  if (authStore.token && !authStore.user) {
+    await authStore.restoreUser();
+  }
   
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login');

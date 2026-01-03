@@ -1,11 +1,12 @@
 <template>
   <div id="app">
+    <UserHeader />
     <router-view />
   </div>
 </template>
 
 <script setup>
-// Main App component
+import UserHeader from './components/UserHeader.vue';
 </script>
 
 <style>

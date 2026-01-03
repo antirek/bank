@@ -3,27 +3,26 @@ import { ref, computed } from 'vue';
 import api from '../api';
 
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref(localStorage.getItem('token') || null);
-  const user = ref(JSON.parse(localStorage.getItem('user') || 'null'));
+  // Используем sessionStorage для изоляции сессий между вкладками
+  const token = ref(sessionStorage.getItem('token') || null);
+  // Не загружаем пользователя из sessionStorage - загрузим из API при восстановлении
+  const user = ref(null);
+  const isRestoring = ref(false);
 
-  const isAuthenticated = computed(() => !!token.value);
+  const isAuthenticated = computed(() => !!token.value && !!user.value);
 
   const setToken = (newToken) => {
     token.value = newToken;
     if (newToken) {
-      localStorage.setItem('token', newToken);
+      sessionStorage.setItem('token', newToken);
     } else {
-      localStorage.removeItem('token');
+      sessionStorage.removeItem('token');
     }
   };
 
   const setUser = (userData) => {
     user.value = userData;
-    if (userData) {
-      localStorage.setItem('user', JSON.stringify(userData));
-    } else {
-      localStorage.removeItem('user');
-    }
+    // Пользователя не храним в sessionStorage - загружаем из API при восстановлении
   };
 
   const login = async (phone, code) => {
@@ -55,38 +54,58 @@ export const useAuthStore = defineStore('auth', () => {
   const logout = () => {
     setToken(null);
     setUser(null);
-    localStorage.removeItem('user');
+    // sessionStorage очищается автоматически при закрытии вкладки
   };
 
   // Восстановление пользователя из токена при загрузке
   const restoreUser = async () => {
-    if (token.value && !user.value) {
-      try {
-        // Декодируем токен для получения userId
-        const payload = JSON.parse(atob(token.value.split('.')[1]));
-        // Можно сделать запрос к API для получения полной информации о пользователе
-        // Пока просто используем данные из токена
-        if (payload.userId) {
+    if (!token.value || isRestoring.value) {
+      return;
+    }
+
+    isRestoring.value = true;
+
+    try {
+      // Декодируем токен для получения userId
+      const payload = JSON.parse(atob(token.value.split('.')[1]));
+      
+      if (!payload.userId) {
+        console.error('No userId in token');
+        logout();
+        return;
+      }
+
+      // Всегда загружаем полные данные пользователя из API
+      const response = await api.get(`/users/${payload.userId}`);
+      const userData = response.data.data;
+      setUser(userData);
+    } catch (error) {
+      console.error('Failed to restore user from token:', error);
+      // Если токен невалидный или API недоступен, очищаем сессию
+      if (error.response?.status === 401 || error.response?.status === 404) {
+        logout();
+      } else {
+        // При других ошибках (например, сеть) используем данные из токена как fallback
+        try {
+          const payload = JSON.parse(atob(token.value.split('.')[1]));
           setUser({
             userId: payload.userId,
             phone: payload.phone
           });
+        } catch (e) {
+          logout();
         }
-      } catch (error) {
-        console.error('Failed to restore user from token:', error);
       }
+    } finally {
+      isRestoring.value = false;
     }
   };
-
-  // Вызываем при инициализации
-  if (token.value && !user.value) {
-    restoreUser();
-  }
 
   return {
     token,
     user,
     isAuthenticated,
+    isRestoring,
     login,
     sendCode,
     logout,

@@ -20,10 +20,13 @@ import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import businessRoutes from './routes/businesses.js';
 import subscriptionRoutes from './routes/subscriptions.js';
+import dialogRoutes from './routes/dialogs.js';
 
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+// Dialog routes должны быть ДО business routes, чтобы избежать конфликта
+app.use('/api', dialogRoutes);
 app.use('/api/businesses', businessRoutes);
 app.use('/api', subscriptionRoutes);
 
