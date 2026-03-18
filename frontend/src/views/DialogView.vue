@@ -263,7 +263,7 @@ watch(() => props.dialogId, async (newId) => {
 
 <style scoped>
 .dialog-view {
-  min-height: 100vh;
+  min-height: calc(100vh - 70px); /* Учитываем высоту UserHeader (~70px) */
   background: #f5f5f5;
   display: flex;
   flex-direction: column;
@@ -273,10 +273,12 @@ watch(() => props.dialogId, async (newId) => {
   max-width: 800px;
   margin: 0 auto;
   width: 100%;
-  height: 100vh;
+  height: calc(100vh - 70px); /* Учитываем высоту UserHeader (~70px) */
+  max-height: calc(100vh - 70px);
   display: flex;
   flex-direction: column;
   background: white;
+  overflow: hidden; /* Предотвращаем переполнение */
 }
 
 .dialog-header {
@@ -375,6 +377,10 @@ watch(() => props.dialogId, async (newId) => {
   padding: 1rem;
   border-top: 1px solid #e0e0e0;
   background: white;
+  flex-shrink: 0; /* Предотвращаем сжатие формы ввода */
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
 }
 
 .message-form {

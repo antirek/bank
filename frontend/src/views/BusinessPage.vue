@@ -16,6 +16,14 @@
           <p v-if="business.description" class="description">
             {{ business.description }}
           </p>
+          <!-- Уголок с профилем владельца -->
+          <div v-if="owner" class="owner-section">
+            <OwnerCard
+              :owner-id="owner.userId"
+              :owner-name="owner.name"
+              :owner-phone="owner.phone"
+            />
+          </div>
         </div>
 
         <div class="business-actions">
@@ -59,6 +67,71 @@
             </router-link>
           </div>
         </div>
+
+        <!-- Блок новостей -->
+        <div class="news-section">
+          <div class="news-header">
+            <h2>Новости</h2>
+            <button
+              v-if="authStore.isAuthenticated && isOwner"
+              @click="showAddNewsForm = !showAddNewsForm"
+              class="btn btn-primary btn-add-news"
+            >
+              {{ showAddNewsForm ? 'Отмена' : '+ Добавить новость' }}
+            </button>
+          </div>
+
+          <!-- Форма добавления новости (только для владельца) -->
+          <div v-if="showAddNewsForm && isOwner" class="add-news-form">
+            <form @submit.prevent="handleAddNews">
+              <div class="form-group">
+                <label for="news-title">Заголовок</label>
+                <input
+                  id="news-title"
+                  v-model="newNews.title"
+                  type="text"
+                  placeholder="Введите заголовок новости"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="news-content">Текст новости</label>
+                <textarea
+                  id="news-content"
+                  v-model="newNews.content"
+                  placeholder="Введите текст новости"
+                  rows="5"
+                  required
+                ></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary" :disabled="addingNews">
+                  {{ addingNews ? 'Сохранение...' : 'Сохранить' }}
+                </button>
+                <button type="button" @click="cancelAddNews" class="btn btn-secondary">
+                  Отмена
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Список новостей -->
+          <div v-if="newsLoading" class="loading-small">
+            Загрузка новостей...
+          </div>
+          <div v-else-if="news.length === 0" class="no-news">
+            Новостей пока нет
+          </div>
+          <div v-else class="news-list">
+            <div v-for="item in news" :key="item.newsId" class="news-item">
+              <div class="news-item-header">
+                <h3>{{ item.title }}</h3>
+                <span class="news-date">{{ formatDate(item.createdAt) }}</span>
+              </div>
+              <p class="news-content">{{ item.content }}</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -69,16 +142,26 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import api from '../api';
+import OwnerCard from '../components/OwnerCard.vue';
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const business = ref(null);
+const owner = ref(null);
+const news = ref([]);
 const loading = ref(true);
 const error = ref('');
 const subscribing = ref(false);
 const isSubscribed = ref(false);
 const startingDialog = ref(false);
+const newsLoading = ref(false);
+const showAddNewsForm = ref(false);
+const addingNews = ref(false);
+const newNews = ref({
+  title: '',
+  content: ''
+});
 
 // Проверяем, является ли текущий пользователь владельцем бизнеса
 const isOwner = computed(() => {
@@ -108,14 +191,37 @@ const loadBusiness = async () => {
       isOwner: business.value?.ownerId === authStore.user?.userId
     });
     
+    // Загружаем информацию о владельце
+    if (business.value?.ownerId) {
+      await loadOwner();
+    }
+    
     // Проверяем подписку, если пользователь авторизован
     if (authStore.isAuthenticated) {
       await checkSubscription();
     }
+    
+    // Загружаем новости
+    await loadNews();
   } catch (err) {
     error.value = err.response?.data?.error || 'Бизнес не найден';
   } finally {
     loading.value = false;
+  }
+};
+
+const loadOwner = async () => {
+  try {
+    const response = await api.get(`/users/${business.value.ownerId}`);
+    owner.value = response.data.data;
+  } catch (err) {
+    console.error('Failed to load owner:', err);
+    // Если не удалось загрузить владельца, создаем минимальную информацию
+    owner.value = {
+      userId: business.value.ownerId,
+      name: '',
+      phone: ''
+    };
   }
 };
 
@@ -160,10 +266,70 @@ const handleStartDialog = async () => {
     // Переходим на страницу диалога
     router.push(`/dialogs/${dialogId}`);
   } catch (err) {
-    alert(err.response?.data?.error || 'Ошибка при создании диалога');
+    const errorMessage = err.response?.data?.error || err.message || 'Ошибка при создании диалога';
+    alert(errorMessage);
+    console.error('Error starting dialog:', err);
   } finally {
     startingDialog.value = false;
   }
+};
+
+const loadNews = async () => {
+  if (!business.value?.businessId) return;
+  
+  newsLoading.value = true;
+  
+  try {
+    const response = await api.get(`/businesses/${business.value.businessId}/news?limit=5`);
+    news.value = response.data.data || [];
+  } catch (err) {
+    console.error('Failed to load news:', err);
+    news.value = [];
+  } finally {
+    newsLoading.value = false;
+  }
+};
+
+const handleAddNews = async () => {
+  if (!authStore.isAuthenticated || !isOwner.value) {
+    return;
+  }
+
+  addingNews.value = true;
+  
+  try {
+    const response = await api.post(`/businesses/${business.value.businessId}/news`, {
+      title: newNews.value.title.trim(),
+      content: newNews.value.content.trim()
+    });
+    
+    // Добавляем новую новость в начало списка
+    news.value.unshift(response.data.data);
+    
+    // Очищаем форму и скрываем её
+    newNews.value = { title: '', content: '' };
+    showAddNewsForm.value = false;
+  } catch (err) {
+    alert(err.response?.data?.error || 'Ошибка при добавлении новости');
+  } finally {
+    addingNews.value = false;
+  }
+};
+
+const cancelAddNews = () => {
+  newNews.value = { title: '', content: '' };
+  showAddNewsForm.value = false;
+};
+
+const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('ru-RU', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 };
 
 onMounted(() => {
@@ -227,6 +393,12 @@ h1 {
   font-size: 1.1rem;
 }
 
+.owner-section {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e0e0e0;
+}
+
 .business-actions {
   padding-top: 2rem;
   border-top: 1px solid #e0e0e0;
@@ -283,5 +455,133 @@ h1 {
   font-size: 1rem;
   font-weight: 600;
   display: inline-block;
+}
+
+.news-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.news-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.news-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 1.5rem;
+}
+
+.btn-add-news {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
+.add-news-form {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  border: 1px solid #e0e0e0;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  font-weight: 500;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group textarea {
+  padding: 0.75rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  resize: vertical;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.loading-small {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+}
+
+.no-news {
+  text-align: center;
+  padding: 2rem;
+  color: #999;
+  font-style: italic;
+}
+
+.news-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.news-item {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  transition: all 0.2s;
+}
+
+.news-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.news-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.news-item-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.2rem;
+  flex: 1;
+}
+
+.news-date {
+  color: #666;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.news-content {
+  color: #555;
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-wrap;
 }
 </style>

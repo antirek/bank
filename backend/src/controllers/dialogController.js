@@ -52,38 +52,88 @@ export const startDialog = async (req, res) => {
       return res.status(404).json({ error: 'Business owner not found' });
     }
 
-    // Проверяем, что у пользователей есть mms3UserId
+    // Проверяем и инициализируем пользователей в mms3, если нужно
     if (!user.mms3UserId) {
-      return res.status(400).json({ error: 'User not registered in mms3' });
+      const mms3UserId = user.userId.replace(/\./g, '_');
+      try {
+        await mms3Client.post('/users', {
+          userId: mms3UserId,
+          name: user.name || user.phone,
+          type: 'user'
+        });
+        user.mms3UserId = mms3UserId;
+        await user.save();
+      } catch (mms3UserError) {
+        if (mms3UserError.response?.status === 409) {
+          // Пользователь уже существует
+          user.mms3UserId = mms3UserId;
+          await user.save();
+        } else {
+          console.error('Error creating user in mms3:', mms3UserError.response?.data || mms3UserError.message);
+          return res.status(500).json({ error: 'Failed to initialize user in mms3' });
+        }
+      }
     }
+    
     if (!owner.mms3UserId) {
-      return res.status(400).json({ error: 'Business owner not registered in mms3' });
+      const mms3UserId = owner.userId.replace(/\./g, '_');
+      try {
+        await mms3Client.post('/users', {
+          userId: mms3UserId,
+          name: owner.name || owner.phone,
+          type: 'user'
+        });
+        owner.mms3UserId = mms3UserId;
+        await owner.save();
+      } catch (mms3OwnerError) {
+        if (mms3OwnerError.response?.status === 409) {
+          // Пользователь уже существует
+          owner.mms3UserId = mms3UserId;
+          await owner.save();
+        } else {
+          console.error('Error creating owner in mms3:', mms3OwnerError.response?.data || mms3OwnerError.message);
+          return res.status(500).json({ error: 'Failed to initialize business owner in mms3' });
+        }
+      }
     }
 
     // Создаем диалог в mms3
     const dialogName = `Диалог с ${business.name}`;
-    const mms3DialogResponse = await mms3Client.post('/dialogs', {
-      name: dialogName,
-      createdBy: user.mms3UserId,
-      members: [
-        {
-          userId: user.mms3UserId,
-          type: 'user',
-          name: user.name || user.phone
-        },
-        {
-          userId: owner.mms3UserId,
-          type: 'user',
-          name: owner.name || owner.phone
+    let mms3DialogResponse;
+    try {
+      mms3DialogResponse = await mms3Client.post('/dialogs', {
+        name: dialogName,
+        createdBy: user.mms3UserId,
+        members: [
+          {
+            userId: user.mms3UserId,
+            type: 'user',
+            name: user.name || user.phone
+          },
+          {
+            userId: owner.mms3UserId,
+            type: 'user',
+            name: owner.name || owner.phone
+          }
+        ],
+        meta: {
+          type: 'business_client',
+          businessId: businessId,
+          userId: userId,
+          ownerId: business.ownerId
         }
-      ],
-      meta: {
-        type: 'business_client',
-        businessId: businessId,
-        userId: userId,
-        ownerId: business.ownerId
+      });
+    } catch (mms3Error) {
+      // Обработка ошибок подключения к mms3
+      if (mms3Error.code === 'ECONNREFUSED' || mms3Error.message?.includes('ECONNREFUSED')) {
+        console.error('mms3 service is not available:', mms3Error.message);
+        return res.status(503).json({ 
+          error: 'Сервис сообщений временно недоступен. Пожалуйста, попробуйте позже.' 
+        });
       }
-    });
+      // Пробрасываем другие ошибки дальше
+      throw mms3Error;
+    }
 
     // mms3 возвращает dialogId в data.data.dialogId или data.dialogId
     const mms3DialogId = mms3DialogResponse.data.data?.dialogId || mms3DialogResponse.data.dialogId;
@@ -123,8 +173,18 @@ export const startDialog = async (req, res) => {
     });
   } catch (error) {
     console.error('Error starting dialog:', error);
+    
+    // Обработка ошибок подключения к mms3
+    if (error.code === 'ECONNREFUSED' || error.message?.includes('ECONNREFUSED')) {
+      return res.status(503).json({ 
+        error: 'Сервис сообщений временно недоступен. Пожалуйста, попробуйте позже.' 
+      });
+    }
+    
+    // Обработка других ошибок
+    const errorMessage = error.response?.data?.error || error.message || 'Failed to start dialog';
     res.status(500).json({ 
-      error: error.response?.data?.error || error.message || 'Failed to start dialog' 
+      error: errorMessage
     });
   }
 };

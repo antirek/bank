@@ -56,6 +56,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/my-dialogs',
+    name: 'MyDialogs',
+    component: () => import('../views/MyDialogs.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/dialogs/:dialogId',
     name: 'DialogView',
     component: () => import('../views/DialogView.vue'),
@@ -77,6 +83,11 @@ const routes = [
       dialogId: route.params.dialogId,
       backUrl: `/my-businesses/${route.params.businessId}/dialogs`
     })
+  },
+  {
+    path: '/users/:userId',
+    name: 'UserCard',
+    component: () => import('../views/UserCard.vue')
   }
 ];
 

@@ -33,6 +33,13 @@
             <h2>{{ user.name || 'Без имени' }}</h2>
             <p class="phone">{{ user.phone }}</p>
             <p class="user-id">ID: {{ user.userId }}</p>
+            <router-link 
+              v-if="user.userId"
+              :to="`/users/${user.userId}`"
+              class="btn-view-card"
+            >
+              Посмотреть мою карточку →
+            </router-link>
           </div>
         </div>
 
@@ -305,6 +312,25 @@ h1 {
   margin: 0.5rem 0 0 0;
   font-size: 0.9rem;
   font-family: monospace;
+}
+
+.btn-view-card {
+  display: inline-block;
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: #667eea;
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+
+.btn-view-card:hover {
+  background: #5568d3;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .profile-form {

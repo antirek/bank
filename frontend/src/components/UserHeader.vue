@@ -1,15 +1,18 @@
 <template>
-  <div v-if="authStore.isAuthenticated && !authStore.isRestoring" class="user-header">
-    <div class="user-header-content">
-      <router-link to="/profile" class="user-info-link">
-        <div class="avatar-mini">
-          {{ userInitials }}
-        </div>
-        <div class="user-details">
-          <span class="user-name">{{ authStore.user?.name || authStore.user?.phone || 'Пользователь' }}</span>
-          <span class="user-phone">{{ authStore.user?.phone }}</span>
-        </div>
-      </router-link>
+        <div v-if="authStore.isAuthenticated && !authStore.isRestoring" class="user-header">
+          <div class="user-header-content">
+            <router-link :to="`/users/${authStore.user?.userId}`" class="user-info-link">
+              <div class="avatar-mini">
+                {{ userInitials }}
+              </div>
+              <div class="user-details">
+                <span class="user-name">{{ authStore.user?.name || authStore.user?.phone || 'Пользователь' }}</span>
+                <span class="user-phone">{{ authStore.user?.phone }}</span>
+              </div>
+            </router-link>
+            <router-link to="/catalog" class="catalog-link">
+              Каталог
+            </router-link>
       <button @click="handleLogout" class="btn-logout-mini" title="Выйти">
         Выйти
       </button>
@@ -109,6 +112,23 @@ const handleLogout = () => {
 .user-phone {
   font-size: 0.85rem;
   color: #666;
+}
+
+.catalog-link {
+  padding: 0.5rem 1rem;
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+  border-radius: 6px;
+  transition: all 0.2s;
+  margin-right: 0.5rem;
+  flex-shrink: 0;
+}
+
+.catalog-link:hover {
+  background: #f0f0f0;
+  color: #5568d3;
 }
 
 .btn-logout-mini {
