@@ -18,6 +18,7 @@
     "dev:auth-ui": "npm run dev -w @boqq/auth-ui",
     "start:user-api": "npm start -w @boqq/user-api",
     "start:auth-api": "npm start -w @boqq/auth-api",
+    "build:ui": "npm run build:user-ui && npm run build:auth-ui",
     "build:user-ui": "npm run build -w @boqq/user-ui",
     "build:auth-ui": "npm run build -w @boqq/auth-ui",
     "preview:user-ui": "npm run preview -w @boqq/user-ui",

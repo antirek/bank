@@ -3,6 +3,10 @@ services:
     build:
       context: ..
       dockerfile: Dockerfile
+      args:
+        - VITE_AUTH_UI_URL=${VITE_AUTH_UI_URL:-}
+        - VITE_USER_UI_URL=${VITE_USER_UI_URL:-}
+        - VITE_AUTH_API_URL=${VITE_AUTH_API_URL:-}
     command: ["npm", "run", "start:user-api"]
     ports:
       - "3101:3101"
@@ -17,6 +21,10 @@ services:
     build:
       context: ..
       dockerfile: Dockerfile
+      args:
+        - VITE_AUTH_UI_URL=${VITE_AUTH_UI_URL:-}
+        - VITE_USER_UI_URL=${VITE_USER_UI_URL:-}
+        - VITE_AUTH_API_URL=${VITE_AUTH_API_URL:-}
     command: ["npm", "run", "start:auth-api"]
     ports:
       - "3102:3102"
