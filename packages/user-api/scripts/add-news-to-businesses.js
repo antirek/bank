@@ -1,10 +1,8 @@
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
+import { config } from '@boqq/shared-models/config';
 import News from '@boqq/shared-models/News.js';
 import Business from '@boqq/shared-models/Business.js';
 import { nanoid } from 'nanoid';
-
-dotenv.config();
 
 const newsTemplates = [
   {
@@ -101,7 +99,7 @@ const addNewsToBusiness = async (businessId, businessName) => {
 
 const main = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/bank');
+    await mongoose.connect(config.mongodbUri);
     console.log('Подключено к MongoDB');
     
     const businesses = await Business.find({ isActive: true });

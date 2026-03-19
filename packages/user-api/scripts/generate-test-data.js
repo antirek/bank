@@ -1,11 +1,9 @@
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
+import { config } from '@boqq/shared-models/config';
 import User from '@boqq/shared-models/User.js';
 import Business from '@boqq/shared-models/Business.js';
 import News from '@boqq/shared-models/News.js';
 import { nanoid } from 'nanoid';
-
-dotenv.config();
 
 // Шаблоны бизнесов по категориям
 const businessTemplates = {
@@ -277,7 +275,7 @@ const generateUser = async (index) => {
 
 const main = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/bank');
+    await mongoose.connect(config.mongodbUri);
     console.log('Подключено к MongoDB\n');
     
     console.log('Начинаю генерацию тестовых данных...\n');

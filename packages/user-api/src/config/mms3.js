@@ -1,13 +1,14 @@
 import axios from 'axios';
+import { config } from '@boqq/shared-models/config';
 
 const mms3Client = axios.create({
-  baseURL: process.env.MMS3_API_URL || 'http://localhost:3005/api',
+  baseURL: config.mms3ApiUrl,
   headers: {
-    'X-API-Key': process.env.MMS3_API_KEY || 'chat3_f3d5f7101d9b1f56284c648e107630f30ed6444883d9d91d0fc74e04120fdd98',
-    'X-Tenant-ID': process.env.MMS3_TENANT_ID || 'tnt_default',
+    'X-API-Key': config.mms3ApiKey,
+    'X-Tenant-ID': config.mms3TenantId,
     'Content-Type': 'application/json'
   },
-  timeout: 10000 // 10 секунд таймаут
+  timeout: 10000
 });
 
 export default mms3Client;

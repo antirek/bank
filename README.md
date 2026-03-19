@@ -56,6 +56,8 @@ cp packages/user-api/.env.example packages/user-api/.env
 
 ## Конфигурация
 
+Конфиг общий: `packages-shared/config` (подключение: `import { config } from '@boqq/shared-models/config'`). Значения берутся из env; при первом импорте конфига вызывается `dotenv.config()` из рабочей директории приложения.
+
 ### user-api (.env)
 
 ```env

@@ -1,9 +1,7 @@
 import jwt from 'jsonwebtoken';
+import { config } from '@boqq/shared-models/config';
 import SmsCode from '@boqq/shared-models/SmsCode.js';
 import User from '@boqq/shared-models/User.js';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret-key';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 export const generateSmsCode = () => '1234';
 
@@ -15,7 +13,7 @@ export const sendSmsCode = async (phone) => {
   const smsCode = new SmsCode({ phone, code, expiresAt });
   await smsCode.save();
 
-  if (process.env.NODE_ENV === 'development') {
+  if (config.nodeEnv === 'development') {
     console.log(`SMS Code for ${phone}: ${code}`);
   }
   return { success: true, message: 'SMS code sent' };
@@ -55,8 +53,8 @@ export const verifySmsCode = async (phone, code) => {
 
   const token = jwt.sign(
     { userId: user.userId, phone: user.phone },
-    JWT_SECRET,
-    { expiresIn: JWT_EXPIRES_IN }
+    config.jwtSecret,
+    { expiresIn: config.jwtExpiresIn }
   );
 
   return {

@@ -1,14 +1,12 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
+import { config } from '@boqq/shared-models/config';
 import { connectDB } from './config/database.js';
 import authRoutes from './routes/auth.js';
 
-dotenv.config();
-
 const app = express();
-const PORT = process.env.PORT || 3102;
-const CORS_ORIGIN = process.env.CORS_ORIGIN || process.env.AUTH_UI_ORIGIN || 'http://localhost:5174';
+const PORT = config.port || 3102;
+const CORS_ORIGIN = config.corsOrigin;
 
 app.use(cors({ origin: CORS_ORIGIN }));
 app.use(express.json());

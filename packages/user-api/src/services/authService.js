@@ -1,11 +1,10 @@
 import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret-key';
+import { config } from '@boqq/shared-models/config';
 
 /** Проверка JWT (токен выдаётся auth-api, тот же секрет). */
 export const verifyToken = (token) => {
   try {
-    return jwt.verify(token, JWT_SECRET);
+    return jwt.verify(token, config.jwtSecret);
   } catch (error) {
     return null;
   }

@@ -1,10 +1,8 @@
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
+import { config } from '@boqq/shared-models/config';
 import User from '@boqq/shared-models/User.js';
 import Business from '@boqq/shared-models/Business.js';
 import mms3Client from '../src/config/mms3.js';
-
-dotenv.config();
 
 // Инициализация пользователей в mms3
 const initUsersInMms3 = async () => {
@@ -144,7 +142,7 @@ const initBusinessesInMms3 = async () => {
 
 const main = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/bank');
+    await mongoose.connect(config.mongodbUri);
     console.log('Подключено к MongoDB\n');
     
     // Проверяем подключение к mms3
