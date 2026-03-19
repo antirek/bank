@@ -1,10 +1,19 @@
-import Dialog from '../models/Dialog.js';
-import Business from '../models/Business.js';
-import User from '../models/User.js';
+import Dialog from '@boqq/shared-models/Dialog.js';
+import Business from '@boqq/shared-models/Business.js';
+import User from '@boqq/shared-models/User.js';
 import mms3Client from '../config/mms3.js';
+
+function requireUser(req, res) {
+  if (!req.user?.userId) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return false;
+  }
+  return true;
+}
 
 // Начать диалог с бизнесом
 export const startDialog = async (req, res) => {
+  if (!requireUser(req, res)) return;
   try {
     const { businessId } = req.params;
     const userId = req.user.userId;
@@ -191,6 +200,7 @@ export const startDialog = async (req, res) => {
 
 // Получить мои диалоги (для пользователя)
 export const getMyDialogs = async (req, res) => {
+  if (!requireUser(req, res)) return;
   try {
     const userId = req.user.userId;
     const { page = 1, limit = 20 } = req.query;
@@ -267,6 +277,7 @@ export const getMyDialogs = async (req, res) => {
 
 // Получить диалоги бизнеса (для владельца)
 export const getBusinessDialogs = async (req, res) => {
+  if (!requireUser(req, res)) return;
   try {
     const { businessId } = req.params;
     const userId = req.user.userId;
@@ -393,6 +404,7 @@ export const getBusinessDialogs = async (req, res) => {
 
 // Получить диалог по ID
 export const getDialog = async (req, res) => {
+  if (!requireUser(req, res)) return;
   try {
     const { dialogId } = req.params;
     const userId = req.user.userId;
@@ -434,6 +446,7 @@ export const getDialog = async (req, res) => {
 
 // Получить сообщения диалога
 export const getDialogMessages = async (req, res) => {
+  if (!requireUser(req, res)) return;
   try {
     const { dialogId } = req.params;
     const userId = req.user.userId;
@@ -502,6 +515,7 @@ export const getDialogMessages = async (req, res) => {
 
 // Отправить сообщение
 export const sendMessage = async (req, res) => {
+  if (!requireUser(req, res)) return;
   try {
     const { dialogId } = req.params;
     const userId = req.user.userId;
@@ -570,6 +584,7 @@ export const sendMessage = async (req, res) => {
 
 // Отметить диалог как прочитанный
 export const markAsRead = async (req, res) => {
+  if (!requireUser(req, res)) return;
   try {
     const { dialogId } = req.params;
     const userId = req.user.userId;

@@ -14,15 +14,14 @@
 
 ```
 boqq/
-├── backend/          # Node.js + Express + express-openapi (boqq-backend)
-├── frontend/         # Vue 3 frontend (boqq-frontend)
-├── packages/         # Общие пакеты
-│   ├── shared/       # @boqq/shared
-│   └── api-client/   # @boqq/api-client
-├── packages-ui/      # UI-пакеты
-│   └── ui/           # @boqq/ui (UserHeader, OwnerCard и др.)
+├── packages/           # API-пакеты
+│   └── user-api/       # boqq-backend (Express + express-openapi)
+├── packages-ui/        # UI-пакеты
+│   ├── user-ui/        # boqq-frontend (Vue 3 + Vite)
+│   └── shared/         # @boqq/ui (UserHeader, OwnerCard), api-client (@boqq/api-client)
+├── packages-shared/   # @boqq/shared-models (mongoose-модели)
 ├── docs/
-├── package.json      # workspaces: backend, frontend, packages/*, packages-ui/*
+├── package.json        # workspaces: packages/*, packages-ui/*, packages-shared
 └── README.md
 ```
 
@@ -44,11 +43,11 @@ npm install
 Настройка backend (один раз):
 
 ```bash
-cp backend/.env.example backend/.env
-# Отредактируйте backend/.env с вашими настройками
+cp packages/user-api/.env.example packages/user-api/.env
+# Отредактируйте packages/user-api/.env с вашими настройками
 ```
 
-Запуск backend: `npm run start:backend` — будет доступен на `http://localhost:3001` (или порт из `backend/.env`).  
+Запуск backend: `npm run start:backend` — будет доступен на `http://localhost:3001` (или порт из `packages/user-api/.env`).  
 Спецификация OpenAPI: `GET /api/api-docs` (JSON).  
 Запуск frontend: `npm run dev:frontend` — будет доступен на `http://localhost:5173`
 

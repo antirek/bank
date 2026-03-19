@@ -6,8 +6,8 @@
   "main": "index.js",
   "exports": {
     ".": "./index.js",
-    "./UserHeader.vue": "./UserHeader.vue",
-    "./OwnerCard.vue": "./OwnerCard.vue"
+    "./UserHeader.vue": "./components/UserHeader.vue",
+    "./OwnerCard.vue": "./components/OwnerCard.vue"
   },
   "peerDependencies": {
     "vue": "^3.0.0",

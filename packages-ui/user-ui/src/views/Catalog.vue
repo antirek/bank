@@ -128,6 +128,7 @@ const loadSubscriptions = async () => {
     const response = await api.get('/me/subscriptions');
     subscriptions.value = response.data.data.subscriptions || [];
   } catch (err) {
+    if (err.response?.status === 401) return; // токен истёк — уже обработано глобально
     console.error('Failed to load subscriptions:', err);
   }
 };
@@ -146,6 +147,7 @@ const subscribe = async (businessId) => {
     subscriptions.value.push({ businessId });
     alert('Вы успешно подписались на бизнес!');
   } catch (err) {
+    if (err.response?.status === 401) return; // сессия истекла, обработано глобально
     alert(err.response?.data?.error || 'Ошибка при подписке');
   } finally {
     subscribing.value = null;

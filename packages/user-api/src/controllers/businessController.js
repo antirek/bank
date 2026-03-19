@@ -1,5 +1,13 @@
-import Business from '../models/Business.js';
+import Business from '@boqq/shared-models/Business.js';
 import mms3Client from '../config/mms3.js';
+
+function requireUser(req, res) {
+  if (!req.user?.userId) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return false;
+  }
+  return true;
+}
 
 export const getBusinesses = async (req, res) => {
   try {
@@ -42,9 +50,10 @@ export const getBusinessBySlug = async (req, res) => {
 };
 
 export const createBusiness = async (req, res) => {
+  if (!requireUser(req, res)) return;
   try {
     const { name, description, slug, categoryIds, location } = req.body;
-    const ownerId = req.user.userId; // Из токена
+    const ownerId = req.user.userId;
     
     // Check if slug already exists
     const existingBusiness = await Business.findOne({ slug });
@@ -118,10 +127,11 @@ export const createBusiness = async (req, res) => {
 };
 
 export const updateBusiness = async (req, res) => {
+  if (!requireUser(req, res)) return;
   try {
     const { name, description, slug, logo, categoryIds, location, isPublic } = req.body;
     const businessId = req.params.id;
-    const userId = req.user?.userId; // Из токена
+    const userId = req.user.userId;
 
     // Проверяем существование бизнеса и права доступа
     const business = await Business.findOne({ businessId });

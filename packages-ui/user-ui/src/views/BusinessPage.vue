@@ -231,6 +231,7 @@ const checkSubscription = async () => {
     const subscriptions = response.data.data.subscriptions || [];
     isSubscribed.value = subscriptions.some(sub => sub.businessId === business.value.businessId);
   } catch (err) {
+    if (err.response?.status === 401) return; // токен истёк — уже обработано глобально
     console.error('Failed to check subscription:', err);
   }
 };
@@ -247,6 +248,7 @@ const handleSubscribe = async () => {
     isSubscribed.value = true;
     alert('Вы успешно подписались на бизнес!');
   } catch (err) {
+    if (err.response?.status === 401) return; // сессия истекла, обработано глобально
     alert(err.response?.data?.error || 'Ошибка при подписке');
   } finally {
     subscribing.value = false;

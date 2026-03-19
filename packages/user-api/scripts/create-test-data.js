@@ -1,8 +1,8 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import User from '../src/models/User.js';
-import Business from '../src/models/Business.js';
-import BusinessSubscription from '../src/models/BusinessSubscription.js';
+import User from '@boqq/shared-models/User.js';
+import Business from '@boqq/shared-models/Business.js';
+import BusinessSubscription from '@boqq/shared-models/BusinessSubscription.js';
 import mms3Client from '../src/config/mms3.js';
 
 dotenv.config();

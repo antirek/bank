@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import News from '../src/models/News.js';
-import Business from '../src/models/Business.js';
+import News from '@boqq/shared-models/News.js';
+import Business from '@boqq/shared-models/Business.js';
 import { nanoid } from 'nanoid';
 
 dotenv.config();

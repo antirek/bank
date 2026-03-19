@@ -1,6 +1,6 @@
-import BusinessSubscription from '../models/BusinessSubscription.js';
-import Business from '../models/Business.js';
-import User from '../models/User.js';
+import BusinessSubscription from '@boqq/shared-models/BusinessSubscription.js';
+import Business from '@boqq/shared-models/Business.js';
+import User from '@boqq/shared-models/User.js';
 import mms3Client from '../config/mms3.js';
 
 // Подписаться на бизнес (канал)
@@ -56,11 +56,16 @@ export const subscribeToBusiness = async (req, res) => {
 
     res.status(201).json({ 
       data: {
-        subscription,
+        subscription: {
+          businessId: subscription.businessId,
+          userId: subscription.userId,
+          subscribedAt: subscription.subscribedAt
+        },
         message: 'Successfully subscribed to business channel'
       }
     });
   } catch (error) {
+    console.error('subscribeToBusiness error:', error);
     res.status(500).json({ error: error.message });
   }
 };

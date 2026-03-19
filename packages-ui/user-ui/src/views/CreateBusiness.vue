@@ -90,6 +90,11 @@ const handleSubmit = async () => {
       router.push('/');
     }, 1500);
   } catch (err) {
+    if (err.response?.status === 401) {
+      error.value = 'Сессия истекла. Войдите снова.';
+      setTimeout(() => router.push('/login'), 1500);
+      return;
+    }
     error.value = err.response?.data?.error || 'Ошибка при создании бизнеса';
   } finally {
     loading.value = false;

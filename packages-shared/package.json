@@ -1,0 +1,19 @@
+{
+  "name": "@boqq/shared-models",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./User.js": "./models/User.js",
+    "./Business.js": "./models/Business.js",
+    "./Dialog.js": "./models/Dialog.js",
+    "./News.js": "./models/News.js",
+    "./SmsCode.js": "./models/SmsCode.js",
+    "./BusinessSubscription.js": "./models/BusinessSubscription.js"
+  },
+  "peerDependencies": {
+    "mongoose": "^8.0.0"
+  }
+}
