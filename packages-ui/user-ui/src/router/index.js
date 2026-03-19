@@ -1,8 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import Home from '../views/Home.vue';
-import Login from '../views/Login.vue';
 import CreateBusiness from '../views/CreateBusiness.vue';
+
+const authUiUrl = import.meta.env.VITE_AUTH_UI_URL || 'http://localhost:5174';
 
 const routes = [
   {
@@ -13,7 +14,7 @@ const routes = [
   {
     path: '/login',
     name: 'Login',
-    component: Login
+    component: () => import('../views/LoginRedirect.vue')
   },
   {
     path: '/create-business',
@@ -106,10 +107,10 @@ router.beforeEach(async (to, from, next) => {
   }
   
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    next('/login');
-  } else {
-    next();
+    window.location.href = authUiUrl;
+    return;
   }
+  next();
 });
 
 export default router;

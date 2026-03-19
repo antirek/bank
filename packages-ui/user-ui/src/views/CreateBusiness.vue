@@ -91,8 +91,9 @@ const handleSubmit = async () => {
     }, 1500);
   } catch (err) {
     if (err.response?.status === 401) {
-      error.value = 'Сессия истекла. Войдите снова.';
-      setTimeout(() => router.push('/login'), 1500);
+      error.value = 'Сессия истекла. Перенаправление на страницу входа…';
+      const authUiUrl = import.meta.env.VITE_AUTH_UI_URL || 'http://localhost:5174';
+      setTimeout(() => { window.location.href = authUiUrl; }, 1500);
       return;
     }
     error.value = err.response?.data?.error || 'Ошибка при создании бизнеса';

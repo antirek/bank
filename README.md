@@ -14,15 +14,15 @@
 
 ```
 boqq/
-├── packages/           # API-пакеты
-│   └── user-api/       # boqq-backend (Express + express-openapi)
-├── packages-ui/        # UI-пакеты
-│   ├── user-ui/        # boqq-frontend (Vue 3 + Vite)
-│   └── shared/         # @boqq/ui (UserHeader, OwnerCard), api-client (@boqq/api-client)
-├── packages-shared/   # @boqq/shared-models (mongoose-модели)
-├── docs/
-├── package.json        # workspaces: packages/*, packages-ui/*, packages-shared
-└── README.md
+├── packages/           # API
+│   ├── user-api/      # boqq-backend (3101)
+│   └── auth-api/      # boqq-auth-api (3102)
+├── packages-ui/
+│   ├── user-ui/       # boqq-frontend (5173)
+│   ├── auth-ui/       # форма входа (5174)
+│   └── shared/        # @boqq/ui, api-client
+├── packages-shared/   # @boqq/shared-models
+└── docs/
 ```
 
 ## Требования
@@ -47,24 +47,43 @@ cp packages/user-api/.env.example packages/user-api/.env
 # Отредактируйте packages/user-api/.env с вашими настройками
 ```
 
-Запуск backend: `npm run start:backend` — будет доступен на `http://localhost:3001` (или порт из `packages/user-api/.env`).  
-Спецификация OpenAPI: `GET /api/api-docs` (JSON).  
-Запуск frontend: `npm run dev:frontend` — будет доступен на `http://localhost:5173`
+- **user-api:** `npm run start:backend` — `http://localhost:3101`, OpenAPI: `GET /api/api-docs`
+- **user-ui:** `npm run dev:frontend` — `http://localhost:5173`
+- **auth-api:** `npm run dev:auth-api` — `http://localhost:3102` (send-code, verify-code)
+- **auth-ui:** `npm run dev:auth-ui` — `http://localhost:5174` (форма входа; после входа редирект на user-ui с токеном)
+
+Запуск всех четырёх сервисов: `npm run dev:all`
 
 ## Конфигурация
 
-### Backend (.env)
+### user-api (.env)
 
 ```env
-PORT=3001
-NODE_ENV=development
-MONGODB_URI=mongodb://localhost:27017/boqq
-MMS3_API_URL=http://localhost:3000/api
-MMS3_API_KEY=your-api-key-here
-MMS3_TENANT_ID=tnt_default
-RABBITMQ_URL=amqp://localhost:5672
+PORT=3101
+MONGODB_URI=mongodb://localhost:27017/bank
 JWT_SECRET=your-jwt-secret-key
+MMS3_API_URL=...
 ```
+
+### auth-api (.env, см. packages/auth-api/.env.example)
+
+```env
+PORT=3102
+MONGODB_URI=mongodb://localhost:27017/bank
+JWT_SECRET=your-jwt-secret-key
+CORS_ORIGIN=http://localhost:5174
+```
+
+**Важно:** `JWT_SECRET` в auth-api и user-api должен совпадать — иначе user-api не примет токен и будет постоянно редирект на форму входа.
+
+### auth-ui (env при сборке / .env)
+
+- `VITE_AUTH_API_URL` — URL auth-api (в dev можно не задавать: используется proxy /auth-api)
+- `VITE_USER_UI_URL` — куда редиректить после входа (например `http://localhost:5173`)
+
+### user-ui (env при сборке / .env)
+
+- `VITE_AUTH_UI_URL` — ссылка на форму входа (например `http://localhost:5174`)
 
 ## API Endpoints
 
@@ -101,18 +120,13 @@ JWT_SECRET=your-jwt-secret-key
 
 ### Запуск из корня проекта (npm workspaces)
 
-Backend (с автоперезагрузкой):
-```bash
-npm run dev:backend
-```
+- `npm run dev:backend` — user-api (3101)
+- `npm run dev:frontend` — user-ui (5173)
+- `npm run dev:auth-api` — auth-api (3102)
+- `npm run dev:auth-ui` — auth-ui (5174)
+- `npm run dev:all` — все четыре сервиса
 
-Frontend (Vite dev server с HMR):
-```bash
-npm run dev:frontend
-```
-
-Сборка frontend: `npm run build:frontend`  
-Превью собранного frontend: `npm run preview:frontend`
+Сборка user-ui: `npm run build:frontend`
 
 ## Лицензия
 

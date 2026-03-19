@@ -8,7 +8,6 @@ import { connectDB } from './config/database.js';
 import { initialize } from 'express-openapi';
 import apiDoc from './api-doc/api-doc.js';
 import { authenticate } from './middleware/auth.js';
-import * as authController from './controllers/authController.js';
 import * as userController from './controllers/userController.js';
 import * as businessController from './controllers/businessController.js';
 import * as dialogController from './controllers/dialogController.js';
@@ -40,7 +39,6 @@ const startServer = async () => {
       apiDoc,
       paths: pathsDir,
       dependencies: {
-        authController,
         userController,
         businessController,
         dialogController,

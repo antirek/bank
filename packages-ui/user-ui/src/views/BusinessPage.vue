@@ -58,13 +58,13 @@
               ✓ Вы подписаны
             </span>
             <!-- Для неавторизованных пользователей -->
-            <router-link
+            <a
               v-if="!authStore.isAuthenticated"
-              to="/login"
+              :href="authUiUrl"
               class="btn btn-primary"
             >
               Войти
-            </router-link>
+            </a>
           </div>
         </div>
 
@@ -147,6 +147,7 @@ import { OwnerCard } from '@boqq/ui';
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const authUiUrl = import.meta.env.VITE_AUTH_UI_URL || 'http://localhost:5174';
 const business = ref(null);
 const owner = ref(null);
 const news = ref([]);

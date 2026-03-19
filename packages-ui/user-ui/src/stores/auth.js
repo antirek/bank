@@ -3,9 +3,7 @@ import { ref, computed } from 'vue';
 import api from '@boqq/api-client';
 
 export const useAuthStore = defineStore('auth', () => {
-  // Используем sessionStorage для изоляции сессий между вкладками
-  const token = ref(sessionStorage.getItem('token') || null);
-  // Не загружаем пользователя из sessionStorage - загрузим из API при восстановлении
+  const token = ref(typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null);
   const user = ref(null);
   const isRestoring = ref(false);
 
@@ -13,10 +11,11 @@ export const useAuthStore = defineStore('auth', () => {
 
   const setToken = (newToken) => {
     token.value = newToken;
+    if (typeof localStorage === 'undefined') return;
     if (newToken) {
-      sessionStorage.setItem('token', newToken);
+      localStorage.setItem('token', newToken);
     } else {
-      sessionStorage.removeItem('token');
+      localStorage.removeItem('token');
     }
   };
 
@@ -25,36 +24,12 @@ export const useAuthStore = defineStore('auth', () => {
     // Пользователя не храним в sessionStorage - загружаем из API при восстановлении
   };
 
-  const login = async (phone, code) => {
-    try {
-      const response = await api.post('/auth/verify-code', { phone, code });
-      setToken(response.data.data.token);
-      setUser(response.data.data.user);
-      return { success: true };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Login failed' 
-      };
-    }
-  };
-
-  const sendCode = async (phone) => {
-    try {
-      await api.post('/auth/send-code', { phone });
-      return { success: true };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Failed to send code' 
-      };
-    }
-  };
+  const login = async () => { /* не используется: вход через auth-ui */ };
+  const sendCode = async () => { /* не используется: вход через auth-ui */ };
 
   const logout = () => {
     setToken(null);
     setUser(null);
-    // sessionStorage очищается автоматически при закрытии вкладки
   };
 
   // Восстановление пользователя из токена при загрузке
@@ -81,11 +56,11 @@ export const useAuthStore = defineStore('auth', () => {
       setUser(userData);
     } catch (error) {
       console.error('Failed to restore user from token:', error);
-      // Если токен невалидный или API недоступен, очищаем сессию
+      // 401/404: не очищаем токен здесь — оставим в localStorage; при следующем запросе перехватчик сделает logout и редирект
       if (error.response?.status === 401 || error.response?.status === 404) {
-        logout();
+        setUser(null);
       } else {
-        // При других ошибках (например, сеть) используем данные из токена как fallback
+        // Сеть и т.п.: подставляем минимальные данные из токена
         try {
           const payload = JSON.parse(atob(token.value.split('.')[1]));
           setUser({
@@ -93,7 +68,7 @@ export const useAuthStore = defineStore('auth', () => {
             phone: payload.phone
           });
         } catch (e) {
-          logout();
+          setUser(null);
         }
       }
     } finally {

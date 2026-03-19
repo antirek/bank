@@ -10,7 +10,7 @@
         </router-link>
         <button @click="handleLogout" class="btn-logout">Выйти</button>
       </div>
-        <router-link v-else to="/login" class="btn-login">Войти</router-link>
+        <a v-else :href="authUiUrl" class="btn-login">Войти</a>
       </div>
     </header>
     <main class="main">
@@ -49,6 +49,7 @@ import api from '@boqq/api-client';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const authUiUrl = import.meta.env.VITE_AUTH_UI_URL || 'http://localhost:5174';
 
 const apiStatus = ref('checking');
 const apiStatusText = ref('Проверка...');
@@ -71,7 +72,7 @@ const checkApiStatus = async () => {
 
 const handleLogout = () => {
   authStore.logout();
-  router.push('/login');
+  router.push('/');
 };
 
 onMounted(() => {
