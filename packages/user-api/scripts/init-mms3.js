@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { config } from '@boqq/shared/config';
 import { User, Business } from '@boqq/shared/models';
-import mms3Client from '../src/config/mms3.js';
+import mms3Client from '@boqq/shared/api-clients/mms3';
 
 // Инициализация пользователей в mms3
 const initUsersInMms3 = async () => {

@@ -1,5 +1,5 @@
 import { Dialog, Business, User } from '@boqq/shared/models';
-import mms3Client from '../config/mms3.js';
+import mms3Client from '@boqq/shared/api-clients/mms3';
 
 function requireUser(req, res) {
   if (!req.user?.userId) {

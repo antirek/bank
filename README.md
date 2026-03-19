@@ -47,8 +47,8 @@ cp packages/user-api/.env.example packages/user-api/.env
 # Отредактируйте packages/user-api/.env с вашими настройками
 ```
 
-- **user-api:** `npm run start:backend` — `http://localhost:3101`, OpenAPI: `GET /api/api-docs`
-- **user-ui:** `npm run dev:frontend` — `http://localhost:5173`
+- **user-api:** `npm run start:user-api` — `http://localhost:3101`, OpenAPI: `GET /api/api-docs`
+- **user-ui:** `npm run dev:user-ui` — `http://localhost:5173`
 - **auth-api:** `npm run dev:auth-api` — `http://localhost:3102` (send-code, verify-code)
 - **auth-ui:** `npm run dev:auth-ui` — `http://localhost:5174` (форма входа; после входа редирект на user-ui с токеном)
 
@@ -122,13 +122,13 @@ CORS_ORIGIN=http://localhost:5174
 
 ### Запуск из корня проекта (npm workspaces)
 
-- `npm run dev:backend` — user-api (3101)
-- `npm run dev:frontend` — user-ui (5173)
+- `npm run dev:user-api` — user-api (3101)
+- `npm run dev:user-ui` — user-ui (5173)
 - `npm run dev:auth-api` — auth-api (3102)
 - `npm run dev:auth-ui` — auth-ui (5174)
 - `npm run dev:all` — все четыре сервиса
 
-Сборка user-ui: `npm run build:frontend`
+Сборка: `npm run build:user-ui`, `npm run build:auth-ui`
 
 ## Лицензия
 

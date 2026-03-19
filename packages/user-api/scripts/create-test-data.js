@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { config } from '@boqq/shared/config';
 import { User, Business, BusinessSubscription } from '@boqq/shared/models';
-import mms3Client from '../src/config/mms3.js';
+import mms3Client from '@boqq/shared/api-clients/mms3';
 
 const testUsers = [
   { phone: '+79001111111', name: 'Иван Иванов' },

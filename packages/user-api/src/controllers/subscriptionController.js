@@ -1,5 +1,5 @@
 import { BusinessSubscription, Business, User } from '@boqq/shared/models';
-import mms3Client from '../config/mms3.js';
+import mms3Client from '@boqq/shared/api-clients/mms3';
 
 // Подписаться на бизнес (канал)
 export const subscribeToBusiness = async (req, res) => {

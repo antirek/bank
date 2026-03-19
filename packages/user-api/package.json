@@ -1,5 +1,5 @@
 {
-  "name": "boqq-backend",
+  "name": "@boqq/user-api",
   "version": "1.0.0",
   "description": "Backend для системы общения бизнеса и клиентов",
   "main": "src/app.js",

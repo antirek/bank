@@ -5,9 +5,11 @@
   "type": "module",
   "exports": {
     "./config": "./config/index.js",
-    "./models": "./models/index.js"
+    "./models": "./models/index.js",
+    "./api-clients/mms3": "./api-clients/mms3.js"
   },
   "dependencies": {
+    "axios": "^1.6.2",
     "dotenv": "^16.3.1"
   },
   "peerDependencies": {

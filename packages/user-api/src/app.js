@@ -6,7 +6,7 @@ import { existsSync } from 'fs';
 import { config } from '@boqq/shared/config';
 import { ready } from '@boqq/shared/models';
 import { initialize } from 'express-openapi';
-import apiDoc from './api-doc/api-doc.js';
+import apiDoc from './routes/api-doc.js';
 import { authenticate } from './middleware/auth.js';
 import * as userController from './controllers/userController.js';
 import * as businessController from './controllers/businessController.js';
@@ -31,7 +31,7 @@ if (config.nodeEnv === 'production' && existsSync(staticDir)) {
 const startServer = async () => {
   try {
     await ready;
-    const pathsDir = path.join(__dirname, 'api-doc/paths');
+    const pathsDir = path.join(__dirname, 'routes/paths');
     await initialize({
       app,
       apiDoc,

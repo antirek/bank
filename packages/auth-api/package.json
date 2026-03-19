@@ -1,5 +1,5 @@
 {
-  "name": "boqq-auth-api",
+  "name": "@boqq/auth-api",
   "version": "1.0.0",
   "description": "Auth API: send-code, verify-code, JWT",
   "main": "src/app.js",

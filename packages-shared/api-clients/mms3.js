@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { config } from '@boqq/shared/config';
+import { config } from '../config/index.js';
 
 const mms3Client = axios.create({
   baseURL: config.mms3.apiUrl,

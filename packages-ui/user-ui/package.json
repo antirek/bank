@@ -1,5 +1,5 @@
 {
-  "name": "boqq-frontend",
+  "name": "@boqq/user-ui",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
