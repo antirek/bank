@@ -102,7 +102,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
-import api from '../api';
+import api from '@boqq/api-client';
 
 const authStore = useAuthStore();
 const user = ref(null);

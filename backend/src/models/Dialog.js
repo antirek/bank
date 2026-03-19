@@ -60,9 +60,6 @@ dialogSchema.index({ userId: 1, lastMessageAt: -1 });
 // Индекс для списка диалогов бизнеса
 dialogSchema.index({ businessId: 1, lastMessageAt: -1 });
 
-// Индекс для поиска по mms3DialogId
-dialogSchema.index({ mms3DialogId: 1 });
-
 const Dialog = mongoose.model('Dialog', dialogSchema);
 
 export default Dialog;

@@ -111,7 +111,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import api from '../api';
+import api from '@boqq/api-client';
 
 const route = useRoute();
 const authStore = useAuthStore();

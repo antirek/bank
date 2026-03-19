@@ -59,7 +59,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import api from '../api';
+import api from '@boqq/api-client';
 
 const props = defineProps({
   dialogId: {

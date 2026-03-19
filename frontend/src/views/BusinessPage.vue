@@ -141,8 +141,8 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import api from '../api';
-import OwnerCard from '../components/OwnerCard.vue';
+import api from '@boqq/api-client';
+import { OwnerCard } from '@boqq/ui';
 
 const route = useRoute();
 const router = useRouter();

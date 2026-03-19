@@ -6,7 +6,12 @@
 </template>
 
 <script setup>
-import UserHeader from './components/UserHeader.vue';
+import { provide } from 'vue';
+import { useAuthStore } from './stores/auth';
+import { UserHeader } from '@boqq/ui';
+
+const authStore = useAuthStore();
+provide('authStore', authStore);
 </script>
 
 <style>

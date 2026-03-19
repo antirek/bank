@@ -94,14 +94,17 @@ export const unsubscribeFromBusiness = async (req, res) => {
 // Получить подписки пользователя
 export const getUserSubscriptions = async (req, res) => {
   try {
+    if (!req.user?.userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     const userId = req.user.userId;
 
     const subscriptions = await BusinessSubscription.find({
       userId,
       isActive: true
-    }).populate('businessId');
+    });
 
-    // Получаем информацию о бизнесах
+    // Получаем информацию о бизнесах (businessId в схеме — строка, не ref)
     const businessIds = subscriptions.map(s => s.businessId);
     const businesses = await Business.find({
       businessId: { $in: businessIds },

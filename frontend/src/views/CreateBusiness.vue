@@ -59,7 +59,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import api from '../api';
+import api from '@boqq/api-client';
 
 const router = useRouter();
 

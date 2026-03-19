@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import api from '../api';
+import api from '@boqq/api-client';
 
 export const useAuthStore = defineStore('auth', () => {
   // Используем sessionStorage для изоляции сессий между вкладками

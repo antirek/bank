@@ -65,7 +65,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
-import api from '../api';
+import api from '@boqq/api-client';
 
 const authStore = useAuthStore();
 const businesses = ref([]);

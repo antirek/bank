@@ -7,28 +7,22 @@ const api = axios.create({
   }
 });
 
-// Request interceptor for adding auth token
 api.interceptors.request.use(
   (config) => {
-    const token = sessionStorage.getItem('token');
+    const token = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor for handling errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized
+    if (error.response?.status === 401 && typeof sessionStorage !== 'undefined') {
       sessionStorage.removeItem('token');
-      // Redirect to login if needed
     }
     return Promise.reject(error);
   }

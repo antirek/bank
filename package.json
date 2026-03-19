@@ -1,0 +1,27 @@
+{
+  "name": "boqq",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Система общения бизнеса и клиентов",
+  "workspaces": [
+    "backend",
+    "frontend",
+    "packages/*",
+    "packages-ui/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n be,fe -c blue,green \"npm run start:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm run dev -w boqq-backend",
+    "dev:frontend": "npm run dev -w boqq-frontend",
+    "start:backend": "npm start -w boqq-backend",
+    "build:frontend": "npm run build -w boqq-frontend",
+    "preview:frontend": "npm run preview -w boqq-frontend",
+    "install:all": "npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

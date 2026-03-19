@@ -1,0 +1,16 @@
+{
+  "name": "@boqq/ui",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./UserHeader.vue": "./UserHeader.vue",
+    "./OwnerCard.vue": "./OwnerCard.vue"
+  },
+  "peerDependencies": {
+    "vue": "^3.0.0",
+    "vue-router": "^4.0.0"
+  }
+}

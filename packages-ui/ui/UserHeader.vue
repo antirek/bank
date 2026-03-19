@@ -1,18 +1,18 @@
 <template>
-        <div v-if="authStore.isAuthenticated && !authStore.isRestoring" class="user-header">
-          <div class="user-header-content">
-            <router-link :to="`/users/${authStore.user?.userId}`" class="user-info-link">
-              <div class="avatar-mini">
-                {{ userInitials }}
-              </div>
-              <div class="user-details">
-                <span class="user-name">{{ authStore.user?.name || authStore.user?.phone || 'Пользователь' }}</span>
-                <span class="user-phone">{{ authStore.user?.phone }}</span>
-              </div>
-            </router-link>
-            <router-link to="/catalog" class="catalog-link">
-              Каталог
-            </router-link>
+  <div v-if="authStore?.isAuthenticated && !authStore?.isRestoring" class="user-header">
+    <div class="user-header-content">
+      <router-link :to="`/users/${authStore.user?.userId}`" class="user-info-link">
+        <div class="avatar-mini">
+          {{ userInitials }}
+        </div>
+        <div class="user-details">
+          <span class="user-name">{{ authStore.user?.name || authStore.user?.phone || 'Пользователь' }}</span>
+          <span class="user-phone">{{ authStore.user?.phone }}</span>
+        </div>
+      </router-link>
+      <router-link to="/catalog" class="catalog-link">
+        Каталог
+      </router-link>
       <button @click="handleLogout" class="btn-logout-mini" title="Выйти">
         Выйти
       </button>
@@ -21,18 +21,16 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, inject } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '../stores/auth';
 
 const router = useRouter();
-const authStore = useAuthStore();
+const authStore = inject('authStore');
 
 const userInitials = computed(() => {
-  if (!authStore.user) return '??';
+  if (!authStore?.user) return '??';
   const name = authStore.user.name;
   if (!name || name.trim() === '') {
-    // Если имени нет, используем первые две цифры телефона
     const phone = authStore.user.phone || '';
     return phone.slice(-2).toUpperCase();
   }
@@ -45,7 +43,7 @@ const userInitials = computed(() => {
 });
 
 const handleLogout = () => {
-  authStore.logout();
+  authStore?.logout();
   router.push('/login');
 };
 </script>
