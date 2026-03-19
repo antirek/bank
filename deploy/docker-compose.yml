@@ -1,10 +1,25 @@
 services:
-  app:
+  user-api:
     build:
       context: ..
-      dockerfile: deploy/Dockerfile
+      dockerfile: Dockerfile
+    command: ["npm", "run", "start:user-api"]
     ports:
-      - "3001:3001"
+      - "3101:3101"
+    env_file:
+      - deploy/.env
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
+
+  auth-api:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    command: ["npm", "run", "start:auth-api"]
+    ports:
+      - "3102:3102"
     env_file:
       - deploy/.env
     depends_on:
