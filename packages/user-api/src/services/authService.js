@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { config } from '@boqq/shared-models/config';
+import { config } from '@boqq/shared/config';
 
 /** Проверка JWT (токен выдаётся auth-api, тот же секрет). */
 export const verifyToken = (token) => {

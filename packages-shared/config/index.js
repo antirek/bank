@@ -14,9 +14,11 @@ export const config = {
   port: process.env.PORT,
   corsOrigin: process.env.CORS_ORIGIN || process.env.AUTH_UI_ORIGIN || 'http://localhost:5174',
 
-  mms3ApiUrl: process.env.MMS3_API_URL || 'http://localhost:3005/api',
-  mms3ApiKey: process.env.MMS3_API_KEY || 'chat3_f3d5f7101d9b1f56284c648e107630f30ed6444883d9d91d0fc74e04120fdd98',
-  mms3TenantId: process.env.MMS3_TENANT_ID || 'tnt_default'
+  mms3: {
+    apiUrl: process.env.MMS3_API_URL || 'http://localhost:3005/api',
+    apiKey: process.env.MMS3_API_KEY || 'chat3_f3d5f7101d9b1f56284c648e107630f30ed6444883d9d91d0fc74e04120fdd98',
+    tenantId: process.env.MMS3_TENANT_ID || 'tnt_default',
+  },
 };
 
 export default config;

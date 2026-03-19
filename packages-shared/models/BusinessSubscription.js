@@ -28,6 +28,4 @@ businessSubscriptionSchema.index({ businessId: 1, userId: 1 }, { unique: true })
 businessSubscriptionSchema.index({ userId: 1 });
 businessSubscriptionSchema.index({ businessId: 1 });
 
-const BusinessSubscription = mongoose.model('BusinessSubscription', businessSubscriptionSchema);
-
-export default BusinessSubscription;
+export default businessSubscriptionSchema;

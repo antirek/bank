@@ -1,4 +1,4 @@
-import Business from '@boqq/shared-models/Business.js';
+import { Business } from '@boqq/shared/models';
 import mms3Client from '../config/mms3.js';
 
 function requireUser(req, res) {

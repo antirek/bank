@@ -29,6 +29,4 @@ const smsCodeSchema = new mongoose.Schema({
 smsCodeSchema.index({ phone: 1 });
 smsCodeSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-const SmsCode = mongoose.model('SmsCode', smsCodeSchema);
-
-export default SmsCode;
+export default smsCodeSchema;

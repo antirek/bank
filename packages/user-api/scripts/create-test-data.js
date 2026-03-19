@@ -1,8 +1,6 @@
 import mongoose from 'mongoose';
-import { config } from '@boqq/shared-models/config';
-import User from '@boqq/shared-models/User.js';
-import Business from '@boqq/shared-models/Business.js';
-import BusinessSubscription from '@boqq/shared-models/BusinessSubscription.js';
+import { config } from '@boqq/shared/config';
+import { User, Business, BusinessSubscription } from '@boqq/shared/models';
 import mms3Client from '../src/config/mms3.js';
 
 const testUsers = [

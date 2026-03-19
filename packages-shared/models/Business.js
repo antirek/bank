@@ -75,6 +75,4 @@ businessSchema.index({ ownerId: 1 });
 businessSchema.index({ categoryIds: 1 });
 businessSchema.index({ 'location.coordinates.lat': 1, 'location.coordinates.lng': 1 });
 
-const Business = mongoose.model('Business', businessSchema);
-
-export default Business;
+export default businessSchema;

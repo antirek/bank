@@ -1,8 +1,6 @@
 import mongoose from 'mongoose';
-import { config } from '@boqq/shared-models/config';
-import User from '@boqq/shared-models/User.js';
-import Business from '@boqq/shared-models/Business.js';
-import News from '@boqq/shared-models/News.js';
+import { config } from '@boqq/shared/config';
+import { User, Business, News } from '@boqq/shared/models';
 import { nanoid } from 'nanoid';
 
 // Шаблоны бизнесов по категориям

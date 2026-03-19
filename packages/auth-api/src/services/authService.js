@@ -1,7 +1,6 @@
 import jwt from 'jsonwebtoken';
-import { config } from '@boqq/shared-models/config';
-import SmsCode from '@boqq/shared-models/SmsCode.js';
-import User from '@boqq/shared-models/User.js';
+import { config } from '@boqq/shared/config';
+import { SmsCode, User } from '@boqq/shared/models';
 
 export const generateSmsCode = () => '1234';
 

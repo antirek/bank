@@ -1,6 +1,4 @@
-import News from '@boqq/shared-models/News.js';
-import Business from '@boqq/shared-models/Business.js';
-import BusinessSubscription from '@boqq/shared-models/BusinessSubscription.js';
+import { News, Business, BusinessSubscription } from '@boqq/shared/models';
 import { nanoid } from 'nanoid';
 
 // Получить последние новости бизнеса

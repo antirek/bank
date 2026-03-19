@@ -21,7 +21,7 @@ boqq/
 │   ├── user-ui/       # boqq-frontend (5173)
 │   ├── auth-ui/       # форма входа (5174)
 │   └── shared/        # @boqq/ui, api-client
-├── packages-shared/   # @boqq/shared-models
+├── packages-shared/   # @boqq/shared
 └── docs/
 ```
 
@@ -56,7 +56,7 @@ cp packages/user-api/.env.example packages/user-api/.env
 
 ## Конфигурация
 
-Конфиг общий: `packages-shared/config` (подключение: `import { config } from '@boqq/shared-models/config'`). Значения берутся из env; при первом импорте конфига вызывается `dotenv.config()` из рабочей директории приложения.
+Конфиг: `import { config } from '@boqq/shared/config'`. Модели и ready: `import { User, ready, ... } from '@boqq/shared/models'`. Значения конфига берутся из env; при первом импорте вызывается `dotenv.config()` из рабочей директории приложения.
 
 ### user-api (.env)
 

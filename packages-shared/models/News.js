@@ -42,6 +42,4 @@ const newsSchema = new mongoose.Schema({
 // Индекс для быстрого поиска новостей бизнеса
 newsSchema.index({ businessId: 1, createdAt: -1 });
 
-const News = mongoose.model('News', newsSchema);
-
-export default News;
+export default newsSchema;

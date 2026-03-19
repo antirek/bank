@@ -3,8 +3,8 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync } from 'fs';
-import { config } from '@boqq/shared-models/config';
-import { connectDB } from './config/database.js';
+import { config } from '@boqq/shared/config';
+import { ready } from '@boqq/shared/models';
 import { initialize } from 'express-openapi';
 import apiDoc from './api-doc/api-doc.js';
 import { authenticate } from './middleware/auth.js';
@@ -30,7 +30,7 @@ if (config.nodeEnv === 'production' && existsSync(staticDir)) {
 
 const startServer = async () => {
   try {
-    await connectDB();
+    await ready;
     const pathsDir = path.join(__dirname, 'api-doc/paths');
     await initialize({
       app,

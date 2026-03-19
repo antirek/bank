@@ -1,4 +1,4 @@
-import User from '@boqq/shared-models/User.js';
+import { User } from '@boqq/shared/models';
 
 export const getUsers = async (req, res) => {
   try {

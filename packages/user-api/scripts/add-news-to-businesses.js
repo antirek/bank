@@ -1,7 +1,6 @@
 import mongoose from 'mongoose';
-import { config } from '@boqq/shared-models/config';
-import News from '@boqq/shared-models/News.js';
-import Business from '@boqq/shared-models/Business.js';
+import { config } from '@boqq/shared/config';
+import { News, Business } from '@boqq/shared/models';
 import { nanoid } from 'nanoid';
 
 const newsTemplates = [

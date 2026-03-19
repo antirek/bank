@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import { config } from '@boqq/shared-models/config';
-import { connectDB } from './config/database.js';
+import { config } from '@boqq/shared/config';
+import { ready } from '@boqq/shared/models';
 import authRoutes from './routes/auth.js';
 
 const app = express();
@@ -24,7 +24,7 @@ app.use((err, req, res, next) => {
 
 const start = async () => {
   try {
-    await connectDB();
+    await ready;
     app.listen(PORT, () => {
       console.log(`Auth API running on port ${PORT}`);
     });

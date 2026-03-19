@@ -1,6 +1,4 @@
-import Dialog from '@boqq/shared-models/Dialog.js';
-import Business from '@boqq/shared-models/Business.js';
-import User from '@boqq/shared-models/User.js';
+import { Dialog, Business, User } from '@boqq/shared/models';
 import mms3Client from '../config/mms3.js';
 
 function requireUser(req, res) {
