@@ -7,17 +7,21 @@ import api from '@boqq/api-client';
 
 const authUiUrl = import.meta.env.VITE_AUTH_UI_URL || 'http://localhost:5174';
 
-// Обработка возврата с auth-ui: токен во fragment
-const hash = window.location.hash;
-const tokenMatch = hash && hash.includes('token=') && /token=([^&]+)/.exec(hash);
-if (tokenMatch) {
-  try {
-    const token = decodeURIComponent(tokenMatch[1]);
-    if (token) {
-      localStorage.setItem('token', token);
-      window.history.replaceState(null, '', window.location.pathname + window.location.search || '/');
-    }
-  } catch (_) {}
+// Поддерживаем токен и в hash (#token=...), и в query (?token=...)
+const extractTokenFromLocation = () => {
+  const hashToken = /(?:^|[?#&])token=([^&]+)/.exec(window.location.hash || '')?.[1];
+  if (hashToken) return decodeURIComponent(hashToken);
+
+  const queryToken = new URLSearchParams(window.location.search).get('token');
+  if (queryToken) return queryToken;
+
+  return null;
+};
+
+const tokenFromUrl = extractTokenFromLocation();
+if (tokenFromUrl && typeof localStorage !== 'undefined') {
+  localStorage.setItem('token', tokenFromUrl);
+  window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}` || '/');
 }
 
 const app = createApp(App);
@@ -26,13 +30,23 @@ const pinia = createPinia();
 app.use(pinia);
 app.use(router);
 
-// При 401 — выход и редирект на форму входа (auth-ui)
+// Только явно «битый» JWT — иначе «No token provided» содержит подстроку «No token» и сбрасывало сессию
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      useAuthStore().logout();
-      window.location.href = authUiUrl;
+      const message = String(error.response?.data?.error || '').toLowerCase();
+      // Не трогаем «no token» — иначе ложный сброс сессии
+      const invalidJwt =
+        !message.includes('no token') &&
+        (message.includes('invalid token') ||
+          message.includes('jwt expired') ||
+          message.includes('token expired') ||
+          message.includes('malformed'));
+      if (invalidJwt) {
+        useAuthStore().logout();
+        window.location.href = authUiUrl;
+      }
     }
     return Promise.reject(error);
   }

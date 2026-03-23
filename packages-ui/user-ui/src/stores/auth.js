@@ -6,6 +6,8 @@ export const useAuthStore = defineStore('auth', () => {
   const token = ref(typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null);
   const user = ref(null);
   const isRestoring = ref(false);
+  /** Один общий промис, чтобы router и main не «пропускали» второй вызов restoreUser пока идёт первый */
+  let restoreInFlight = null;
 
   const isAuthenticated = computed(() => !!token.value && !!user.value);
 
@@ -34,46 +36,64 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Восстановление пользователя из токена при загрузке
   const restoreUser = async () => {
-    if (!token.value || isRestoring.value) {
+    if (!token.value) {
       return;
     }
+    if (user.value) {
+      return;
+    }
+    if (restoreInFlight) {
+      return restoreInFlight;
+    }
 
-    isRestoring.value = true;
+    restoreInFlight = (async () => {
+      isRestoring.value = true;
+      try {
+        const payload = JSON.parse(atob(token.value.split('.')[1]));
 
-    try {
-      // Декодируем токен для получения userId
-      const payload = JSON.parse(atob(token.value.split('.')[1]));
-      
-      if (!payload.userId) {
-        console.error('No userId in token');
-        logout();
-        return;
-      }
+        if (!payload.userId) {
+          console.error('No userId in token');
+          logout();
+          return;
+        }
 
-      // Всегда загружаем полные данные пользователя из API
-      const response = await api.get(`/users/${payload.userId}`);
-      const userData = response.data.data;
-      setUser(userData);
-    } catch (error) {
-      console.error('Failed to restore user from token:', error);
-      // 401/404: не очищаем токен здесь — оставим в localStorage; при следующем запросе перехватчик сделает logout и редирект
-      if (error.response?.status === 401 || error.response?.status === 404) {
-        setUser(null);
-      } else {
-        // Сеть и т.п.: подставляем минимальные данные из токена
+        const response = await api.get(`/users/${payload.userId}`);
+        const userData = response.data.data;
+        setUser(userData);
+      } catch (error) {
+        console.error('Failed to restore user from token:', error);
+        const status = error.response?.status;
         try {
           const payload = JSON.parse(atob(token.value.split('.')[1]));
+          if (status === 401) {
+            // Токен недействителен — выходим из сессии
+            logout();
+            return;
+          }
+          if (status === 404) {
+            // Пользователя нет в БД user-api, но JWT валиден — не рвём сессию (иначе guard шлёт на auth-ui)
+            setUser({
+              userId: payload.userId,
+              phone: payload.phone,
+              name: payload.name || ''
+            });
+            return;
+          }
           setUser({
             userId: payload.userId,
-            phone: payload.phone
+            phone: payload.phone,
+            name: payload.name || ''
           });
         } catch (e) {
           setUser(null);
         }
+      } finally {
+        isRestoring.value = false;
+        restoreInFlight = null;
       }
-    } finally {
-      isRestoring.value = false;
-    }
+    })();
+
+    return restoreInFlight;
   };
 
   return {
