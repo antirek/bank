@@ -4,6 +4,14 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const config = {
+  apps: {
+    userApi: {
+      port: process.env.USER_API_PORT || 3101,
+    },
+    authApi: {
+      port: process.env.AUTH_API_PORT || 3102,
+    },
+  },
   nodeEnv: process.env.NODE_ENV || 'development',
 
   mongodbUri: process.env.MONGODB_URI || 'mongodb://localhost:27017/bank',

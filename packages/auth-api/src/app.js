@@ -9,7 +9,7 @@ import authRoutes from './routes/auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-const PORT = config.port || 3102;
+const PORT = config.apps.authApi.port;
 const CORS_ORIGIN = config.corsOrigin;
 
 app.use(cors({ origin: CORS_ORIGIN }));

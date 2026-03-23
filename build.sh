@@ -2,7 +2,7 @@
 set -e
 cd "$(dirname "$0")"
 
-TAG=0.0.1
+TAG=0.0.2
 
 docker build -t antirek/boqq:$TAG .
 

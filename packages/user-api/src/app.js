@@ -16,7 +16,7 @@ import * as subscriptionController from './controllers/subscriptionController.js
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-const PORT = config.port || 3101;
+const PORT = config.apps.userApi.port;
 
 app.use(cors());
 app.use(express.json());
