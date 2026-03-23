@@ -51,7 +51,7 @@
           </div>
           
           <div class="business-info">
-            <p class="slug">/{{ business.slug }}</p>
+            <p class="slug">/b/{{ business.slug }}</p>
             <p v-if="business.description" class="description">
               {{ business.description }}
             </p>
@@ -60,7 +60,7 @@
 
           <div class="business-footer">
             <router-link
-              :to="`/business/${business.slug}`"
+              :to="`/b/${business.slug}`"
               class="btn-view"
             >
               Открыть страницу →

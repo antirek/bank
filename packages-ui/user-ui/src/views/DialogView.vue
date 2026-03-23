@@ -97,7 +97,7 @@ const scrollPosition = ref(0);
 const computedBackUrl = computed(() => {
   if (props.backUrl) return props.backUrl;
   if (dialogInfo.value.businessSlug) {
-    return `/business/${dialogInfo.value.businessSlug}`;
+    return `/b/${dialogInfo.value.businessSlug}`;
   }
   return '/';
 });

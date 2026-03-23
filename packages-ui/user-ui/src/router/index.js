@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import Home from '../views/Home.vue';
-import CreateBusiness from '../views/CreateBusiness.vue';
 
 const authUiUrl = import.meta.env.VITE_AUTH_UI_URL || 'http://localhost:5174';
 
@@ -19,8 +18,8 @@ const routes = [
   {
     path: '/create-business',
     name: 'CreateBusiness',
-    component: CreateBusiness,
-    meta: { requiresAuth: true }
+    component: () => import('../views/BusinessCardBuilder.vue'),
+    meta: { requiresAuth: true, cardBuilderMode: 'create' }
   },
   {
     path: '/my-businesses',
@@ -30,9 +29,7 @@ const routes = [
   },
   {
     path: '/businesses/:id/edit',
-    name: 'EditBusiness',
-    component: () => import('../views/EditBusiness.vue'),
-    meta: { requiresAuth: true }
+    redirect: (to) => ({ path: `/my-businesses/${to.params.id}/card-builder`, replace: true })
   },
   {
     path: '/my-subscriptions',
@@ -46,9 +43,13 @@ const routes = [
     component: () => import('../views/Catalog.vue')
   },
   {
-    path: '/business/:slug',
+    path: '/b/:slug',
     name: 'BusinessPage',
     component: () => import('../views/BusinessPage.vue')
+  },
+  {
+    path: '/business/:slug',
+    redirect: (to) => ({ path: `/b/${to.params.slug}`, replace: true })
   },
   {
     path: '/profile',
@@ -74,6 +75,12 @@ const routes = [
     name: 'BusinessDialogs',
     component: () => import('../views/BusinessDialogs.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/my-businesses/:businessId/card-builder',
+    name: 'BusinessCardBuilder',
+    component: () => import('../views/BusinessCardBuilder.vue'),
+    meta: { requiresAuth: true, cardBuilderMode: 'edit' }
   },
   {
     path: '/my-businesses/:businessId/dialogs/:dialogId',

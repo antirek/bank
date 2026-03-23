@@ -12,7 +12,7 @@
       <div v-else-if="business" class="business-content">
         <div class="business-header-section">
           <h1>{{ business.name }}</h1>
-          <p class="slug">/{{ business.slug }}</p>
+          <p class="slug">/b/{{ business.slug }}</p>
           <p v-if="business.description" class="description">
             {{ business.description }}
           </p>
@@ -24,6 +24,38 @@
               :owner-phone="owner.phone"
             />
           </div>
+        </div>
+
+        <div v-if="renderedSections.length" class="card-sections">
+          <section v-for="section in renderedSections" :key="section.id" class="section-card">
+            <h3>{{ sectionTitle(section.type) }}</h3>
+            <template v-if="section.type === 'address'">
+              <p>{{ section.data.address }}</p>
+            </template>
+            <template v-else-if="section.type === 'contacts'">
+              <p v-if="section.data.email">Email: {{ section.data.email }}</p>
+              <p v-if="section.data.website">
+                Сайт: <a :href="section.data.website" target="_blank" rel="noopener noreferrer">{{ section.data.website }}</a>
+              </p>
+              <ul v-if="section.data.phones?.length">
+                <li v-for="phone in section.data.phones" :key="phone">{{ phone }}</li>
+              </ul>
+            </template>
+            <template v-else-if="section.type === 'working_hours'">
+              <ul class="hours-list">
+                <li v-for="day in dayKeys" :key="day">
+                  <strong>{{ dayNames[day] }}:</strong>
+                  <span v-if="section.data[day]?.enabled">{{ section.data[day].from }}-{{ section.data[day].to }}</span>
+                  <span v-else>выходной</span>
+                </li>
+              </ul>
+            </template>
+            <template v-else-if="section.type === 'gallery'">
+              <div class="gallery-grid">
+                <img v-for="img in galleryImages(section)" :key="img" :src="img" alt="Фото бизнеса" />
+              </div>
+            </template>
+          </section>
         </div>
 
         <div class="business-actions">
@@ -163,6 +195,8 @@ const newNews = ref({
   title: '',
   content: ''
 });
+const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+const dayNames = { mon: 'Пн', tue: 'Вт', wed: 'Ср', thu: 'Чт', fri: 'Пт', sat: 'Сб', sun: 'Вс' };
 
 // Проверяем, является ли текущий пользователь владельцем бизнеса
 const isOwner = computed(() => {
@@ -175,6 +209,31 @@ const isOwner = computed(() => {
   }
   return business.value.ownerId === authStore.user.userId;
 });
+
+const fallbackSections = computed(() => {
+  if (!business.value) return [];
+  return [
+    { id: 'address', type: 'address', enabled: !!business.value.address, order: 0, data: { address: business.value.address || business.value.location?.address || '' } },
+    { id: 'contacts', type: 'contacts', enabled: true, order: 1, data: business.value.contacts || { phones: [], email: '', website: '' } },
+    { id: 'working_hours', type: 'working_hours', enabled: true, order: 2, data: business.value.workingHours || {} },
+    { id: 'gallery', type: 'gallery', enabled: Array.isArray(business.value.gallery) && business.value.gallery.length > 0, order: 3, data: { images: business.value.gallery || [] } }
+  ];
+});
+
+const renderedSections = computed(() => {
+  const sections = business.value?.card?.sections?.length ? business.value.card.sections : fallbackSections.value;
+  return sections.filter((s) => s.enabled).sort((a, b) => a.order - b.order);
+});
+
+const sectionTitle = (type) => ({
+  address: 'Адрес',
+  contacts: 'Контакты',
+  working_hours: 'Время работы',
+  gallery: 'Галерея',
+  hero: 'Основное'
+}[type] || type);
+
+const galleryImages = (section) => section.data?.images || [];
 
 const loadBusiness = async () => {
   loading.value = true;
@@ -400,6 +459,44 @@ h1 {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
   border-top: 1px solid #e0e0e0;
+}
+
+.card-sections {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.section-card {
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  padding: 1rem;
+  background: #fafafa;
+}
+
+.section-card h3 {
+  margin: 0 0 0.75rem 0;
+}
+
+.hours-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.5rem;
+}
+
+.gallery-grid img {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 6px;
 }
 
 .business-actions {

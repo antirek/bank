@@ -46,9 +46,9 @@
                 </span>
               </router-link>
               <router-link
-                :to="`/businesses/${business.businessId}/edit`"
+                :to="`/my-businesses/${business.businessId}/card-builder`"
                 class="btn-icon"
-                title="Редактировать"
+                title="Карточка бизнеса"
               >
                 ✏️
               </router-link>
@@ -56,7 +56,7 @@
           </div>
           
           <div class="business-info">
-            <p class="slug">/{{ business.slug }}</p>
+            <p class="slug">/b/{{ business.slug }}</p>
             <p v-if="business.description" class="description">
               {{ business.description }}
             </p>

@@ -61,7 +61,7 @@
               <div class="news-feed-header">
                 <router-link
                   v-if="newsItem.business"
-                  :to="`/business/${newsItem.business.slug}`"
+                  :to="`/b/${newsItem.business.slug}`"
                   class="news-business-link"
                 >
                   {{ newsItem.business.name }}
@@ -88,7 +88,7 @@
             <router-link
               v-for="business in businesses"
               :key="business.businessId"
-              :to="`/business/${business.slug}`"
+              :to="`/b/${business.slug}`"
               class="business-item"
             >
               <div class="business-info">
@@ -96,7 +96,7 @@
                 <p v-if="business.description" class="business-description">
                   {{ business.description }}
                 </p>
-                <p class="business-slug">/{{ business.slug }}</p>
+                <p class="business-slug">/b/{{ business.slug }}</p>
               </div>
               <div class="business-arrow">→</div>
             </router-link>
