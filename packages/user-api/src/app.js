@@ -8,6 +8,7 @@ import { ready } from '@boqq/shared/models';
 import { initialize } from 'express-openapi';
 import apiDoc from './routes/api-doc.js';
 import { authenticate } from './middleware/auth.js';
+import { verifyToken } from './services/authService.js';
 import * as userController from './controllers/userController.js';
 import * as businessController from './controllers/businessController.js';
 import * as dialogController from './controllers/dialogController.js';
@@ -21,6 +22,19 @@ const PORT = config.apps.userApi.port;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+// Универсально прикладываем пользователя из Bearer JWT.
+// Это защищает от кейсов, когда route-level additional middleware не сработал.
+app.use((req, _res, next) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+    if (decoded) {
+      req.user = decoded;
+    }
+  }
+  next();
+});
 
 // В production отдаём собранный frontend (SPA)
 const staticDir = path.join(__dirname, '../public');

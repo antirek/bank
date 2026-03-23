@@ -3,7 +3,7 @@ import { createPinia } from 'pinia';
 import App from './App.vue';
 import router from './router';
 import { useAuthStore } from './stores/auth';
-import api from '@boqq/api-client';
+import api, { setAuthTokenGetter } from '@boqq/api-client';
 
 const authUiUrl = import.meta.env.VITE_AUTH_UI_URL || 'http://localhost:5174';
 
@@ -28,6 +28,8 @@ const app = createApp(App);
 const pinia = createPinia();
 
 app.use(pinia);
+// Токен из Pinia (источник истины после setToken) + fallback на localStorage в api-client
+setAuthTokenGetter(() => useAuthStore().token);
 app.use(router);
 
 // Только явно «битый» JWT — иначе «No token provided» содержит подстроку «No token» и сбрасывало сессию

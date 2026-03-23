@@ -1,7 +1,33 @@
 import axios from 'axios';
 
+/** После createPinia() в main приложения — чтобы Authorization совпадал с store (не только localStorage). */
+let authTokenGetter = null;
+export function setAuthTokenGetter(fn) {
+  authTokenGetter = typeof fn === 'function' ? fn : null;
+}
+
+function resolveAuthToken() {
+  try {
+    const fromStore = authTokenGetter ? authTokenGetter() : null;
+    if (fromStore) return fromStore;
+  } catch (_) {
+    /* pinia ещё не готова — падаем на storage */
+  }
+  if (typeof localStorage !== 'undefined') {
+    return localStorage.getItem('token');
+  }
+  return null;
+}
+
+const baseURL =
+  typeof import.meta !== 'undefined' &&
+  import.meta.env &&
+  import.meta.env.VITE_API_BASE_URL
+    ? import.meta.env.VITE_API_BASE_URL
+    : '/api';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL,
   headers: {
     'Content-Type': 'application/json'
   }
@@ -9,7 +35,7 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = typeof localStorage !== 'undefined' && localStorage.getItem('token');
+    const token = resolveAuthToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

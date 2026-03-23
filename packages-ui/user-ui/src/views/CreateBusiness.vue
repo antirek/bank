@@ -91,9 +91,24 @@ const handleSubmit = async () => {
     }, 1500);
   } catch (err) {
     if (err.response?.status === 401) {
-      error.value = 'Сессия истекла. Перенаправление на страницу входа…';
       const authUiUrl = import.meta.env.VITE_AUTH_UI_URL || 'http://localhost:5174';
-      setTimeout(() => { window.location.href = authUiUrl; }, 1500);
+      const msg = String(err.response?.data?.error || '').toLowerCase();
+      if (msg.includes('no token')) {
+        error.value =
+          'Запрос ушёл без токена авторизации. Обновите страницу и попробуйте снова.';
+        return;
+      }
+      if (msg.includes('invalid token') || msg.includes('expired') || msg.includes('malformed')) {
+        error.value =
+          'Токен не принят сервером (истёк или другой JWT_SECRET у user-api и auth-api). Переход на вход…';
+        setTimeout(() => {
+          window.location.href = authUiUrl;
+        }, 2000);
+        return;
+      }
+      error.value =
+        err.response?.data?.error ||
+        'Нужна авторизация. Если вы только что вошли — проверьте, что API доступен по тому же домену (или задайте VITE_API_BASE_URL).';
       return;
     }
     error.value = err.response?.data?.error || 'Ошибка при создании бизнеса';
