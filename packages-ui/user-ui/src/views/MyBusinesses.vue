@@ -57,6 +57,13 @@
           
           <div class="business-info">
             <p class="slug">/b/{{ business.slug }}</p>
+            <router-link
+              v-if="business.slug"
+              :to="`/b/${business.slug}`"
+              class="business-page-link"
+            >
+              Открыть публичную карточку →
+            </router-link>
             <p v-if="business.description" class="description">
               {{ business.description }}
             </p>
@@ -297,6 +304,18 @@ h1 {
   font-weight: 600;
   margin: 0 0 0.5rem 0;
   font-family: monospace;
+}
+
+.business-page-link {
+  display: inline-block;
+  margin-bottom: 0.5rem;
+  color: #5c6bc0;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.business-page-link:hover {
+  text-decoration: underline;
 }
 
 .description {

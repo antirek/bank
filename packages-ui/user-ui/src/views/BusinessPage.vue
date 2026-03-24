@@ -11,8 +11,52 @@
 
       <div v-else-if="business" class="business-content">
         <div class="business-header-section">
-          <h1>{{ business.name }}</h1>
-          <p class="slug">/b/{{ business.slug }}</p>
+          <div class="header-top-row">
+            <div class="header-titles">
+              <h1>{{ business.name }}</h1>
+              <p class="slug">/b/{{ business.slug }}</p>
+            </div>
+            <div class="header-actions">
+              <router-link
+                v-if="authStore.isAuthenticated && isOwner"
+                :to="`/my-businesses/${business.businessId}/dialogs`"
+                class="btn btn-primary btn-header"
+              >
+                📨 Обращения
+              </router-link>
+              <button
+                v-else-if="authStore.isAuthenticated && !isOwner"
+                type="button"
+                class="btn btn-primary btn-header"
+                :disabled="startingDialog"
+                @click="handleStartDialog"
+              >
+                {{ startingDialog ? 'Открытие...' : '💬 Начать диалог' }}
+              </button>
+              <button
+                v-if="authStore.isAuthenticated && !isOwner && !isSubscribed"
+                type="button"
+                class="btn btn-secondary btn-header"
+                :disabled="subscribing"
+                @click="handleSubscribe"
+              >
+                {{ subscribing ? 'Подписка...' : '+ Подписаться' }}
+              </button>
+              <span
+                v-else-if="authStore.isAuthenticated && !isOwner && isSubscribed"
+                class="subscribed-badge subscribed-badge--header"
+              >
+                ✓ Вы подписаны
+              </span>
+              <a
+                v-if="!authStore.isAuthenticated"
+                :href="authUiUrl"
+                class="btn btn-primary btn-header"
+              >
+                Войти
+              </a>
+            </div>
+          </div>
           <p v-if="business.description" class="description">
             {{ business.description }}
           </p>
@@ -56,48 +100,6 @@
               </div>
             </template>
           </section>
-        </div>
-
-        <div class="business-actions">
-          <div class="actions-row">
-            <!-- Если пользователь - владелец бизнеса, показываем кнопку "Обращения" -->
-            <router-link
-              v-if="authStore.isAuthenticated && isOwner"
-              :to="`/my-businesses/${business.businessId}/dialogs`"
-              class="btn btn-primary"
-            >
-              📨 Обращения
-            </router-link>
-            <!-- Если пользователь - не владелец, показываем кнопку "Начать диалог" -->
-            <button
-              v-else-if="authStore.isAuthenticated && !isOwner"
-              @click="handleStartDialog"
-              class="btn btn-primary"
-              :disabled="startingDialog"
-            >
-              {{ startingDialog ? 'Открытие...' : '💬 Начать диалог' }}
-            </button>
-            <!-- Кнопка подписки только для не-владельцев -->
-            <button
-              v-if="authStore.isAuthenticated && !isOwner && !isSubscribed"
-              @click="handleSubscribe"
-              class="btn btn-secondary"
-              :disabled="subscribing"
-            >
-              {{ subscribing ? 'Подписка...' : '+ Подписаться' }}
-            </button>
-            <span v-else-if="authStore.isAuthenticated && !isOwner && isSubscribed" class="subscribed-badge">
-              ✓ Вы подписаны
-            </span>
-            <!-- Для неавторизованных пользователей -->
-            <a
-              v-if="!authStore.isAuthenticated"
-              :href="authUiUrl"
-              class="btn btn-primary"
-            >
-              Войти
-            </a>
-          </div>
         </div>
 
         <!-- Блок новостей -->
@@ -242,14 +244,6 @@ const loadBusiness = async () => {
   try {
     const response = await api.get(`/businesses/slug/${route.params.slug}`);
     business.value = response.data.data;
-    
-    // Отладочная информация
-    console.log('Business loaded:', {
-      businessId: business.value?.businessId,
-      ownerId: business.value?.ownerId,
-      currentUserId: authStore.user?.userId,
-      isOwner: business.value?.ownerId === authStore.user?.userId
-    });
     
     // Загружаем информацию о владельце
     if (business.value?.ownerId) {
@@ -436,16 +430,42 @@ onMounted(() => {
   margin-bottom: 2rem;
 }
 
-h1 {
-  margin: 0 0 0.5rem 0;
+.header-top-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.header-titles {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.header-titles h1 {
+  margin: 0 0 0.35rem 0;
   color: #333;
+  font-size: clamp(1.35rem, 4vw, 1.75rem);
+  line-height: 1.2;
+}
+
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex: 0 1 auto;
 }
 
 .slug {
   color: #667eea;
   font-weight: 600;
   font-family: monospace;
-  margin: 0.5rem 0;
+  margin: 0;
+  font-size: 0.95rem;
 }
 
 .description {
@@ -499,15 +519,10 @@ h1 {
   border-radius: 6px;
 }
 
-.business-actions {
-  padding-top: 2rem;
-  border-top: 1px solid #e0e0e0;
-}
-
-.actions-row {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
+.btn-header {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 .btn-secondary {
@@ -555,6 +570,29 @@ h1 {
   font-size: 1rem;
   font-weight: 600;
   display: inline-block;
+}
+
+.subscribed-badge--header {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 520px) {
+  .header-top-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-actions {
+    justify-content: flex-start;
+  }
+
+  .btn-header {
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: normal;
+    text-align: center;
+  }
 }
 
 .news-section {
