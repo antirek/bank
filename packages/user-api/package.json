@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "node --watch src/app.js",
-    "create-test-data": "node scripts/create-test-data.js"
+    "create-test-data": "node scripts/create-test-data.js",
+    "enrich-catalog": "node scripts/enrich-catalog-businesses.js"
   },
   "keywords": [],
   "author": "",

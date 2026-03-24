@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -e
 
+
+MMS3_API_URL="https://tubo-mms3-tenant-api.services.mobilon.ru/"
+MMS3_API_KEY="chat3_de2b79b6159abaf8cb1145ec95b8136146483d1d34770236014932e13a327fc1"
+
+
 # Порты сервисов
 USER_API_PORT="${USER_API_PORT:-3101}"
 AUTH_API_PORT="${AUTH_API_PORT:-3102}"

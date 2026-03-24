@@ -56,6 +56,41 @@
               {{ business.description }}
             </p>
             <p v-else class="description empty">Нет описания</p>
+
+            <dl class="catalog-facts">
+              <div v-if="catalogAddress(business)" class="catalog-fact">
+                <dt>Адрес</dt>
+                <dd>{{ catalogAddress(business) }}</dd>
+              </div>
+              <div v-if="catalogContacts(business)" class="catalog-fact">
+                <dt>Контакты</dt>
+                <dd>
+                  <template v-if="catalogContacts(business).phones.length">
+                    <span v-for="(p, i) in catalogContacts(business).phones" :key="p + i" class="fact-line">{{
+                      p
+                    }}</span>
+                  </template>
+                  <a
+                    v-if="catalogContacts(business).email"
+                    :href="'mailto:' + catalogContacts(business).email"
+                    class="fact-link"
+                    >{{ catalogContacts(business).email }}</a
+                  >
+                  <a
+                    v-if="catalogContacts(business).website"
+                    :href="normalizeUrl(catalogContacts(business).website)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="fact-link"
+                    >{{ shortUrl(catalogContacts(business).website) }}</a
+                  >
+                </dd>
+              </div>
+              <div v-if="catalogHours(business)" class="catalog-fact">
+                <dt>Время работы</dt>
+                <dd>{{ catalogHours(business) }}</dd>
+              </div>
+            </dl>
           </div>
 
           <div class="business-footer">
@@ -132,6 +167,61 @@ const loadSubscriptions = async () => {
     console.error('Failed to load subscriptions:', err);
   }
 };
+
+function catalogAddress(b) {
+  const a = (b.address || '').trim();
+  if (a) return a;
+  return (b.location?.address || '').trim();
+}
+
+function catalogContacts(b) {
+  const c = b.contacts;
+  if (!c) return null;
+  const phones = (c.phones || []).map((p) => String(p).trim()).filter(Boolean);
+  const email = (c.email || '').trim();
+  const website = (c.website || '').trim();
+  if (!phones.length && !email && !website) return null;
+  return { phones, email, website };
+}
+
+function normalizeUrl(url) {
+  const u = url.trim();
+  if (!u) return '#';
+  if (/^https?:\/\//i.test(u)) return u;
+  return `https://${u}`;
+}
+
+function shortUrl(url) {
+  return String(url).replace(/^https?:\/\//i, '').replace(/\/$/, '');
+}
+
+/** Краткая строка для карточки каталога. */
+function catalogHours(b) {
+  const wh = b.workingHours;
+  if (!wh || typeof wh !== 'object') return '';
+
+  const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri'];
+  const dayOk = (d) => wh[d]?.enabled && wh[d].from && wh[d].to;
+  const monFriUniform =
+    dayOk('mon') &&
+    dayKeys.every((d) => !wh[d]?.enabled || (wh[d].from === wh.mon.from && wh[d].to === wh.mon.to));
+
+  if (monFriUniform) {
+    let s = `Пн–Пт ${wh.mon.from}–${wh.mon.to}`;
+    if (wh.sat?.enabled && wh.sat.from && wh.sat.to) {
+      s += `, Сб ${wh.sat.from}–${wh.sat.to}`;
+    }
+    if (wh.sun?.enabled && wh.sun.from && wh.sun.to) {
+      s += `, Вс ${wh.sun.from}–${wh.sun.to}`;
+    }
+    return s;
+  }
+
+  const enabled = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].filter((d) => wh[d]?.enabled);
+  if (enabled.length === 0) return '';
+  if (enabled.length === 7) return 'Ежедневно (см. страницу)';
+  return `Режим: ${enabled.length} дн. в неделю`;
+}
 
 const subscribe = async (businessId) => {
   if (!authStore.isAuthenticated) {
@@ -331,6 +421,56 @@ h1 {
 .description.empty {
   color: #999;
   font-style: italic;
+}
+
+.catalog-facts {
+  margin: 0.85rem 0 0 0;
+  padding-top: 0.85rem;
+  border-top: 1px solid #eee;
+}
+
+.catalog-fact {
+  margin: 0 0 0.65rem 0;
+}
+
+.catalog-fact:last-child {
+  margin-bottom: 0;
+}
+
+.catalog-fact dt {
+  margin: 0 0 0.2rem 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #888;
+}
+
+.catalog-fact dd {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #444;
+  line-height: 1.45;
+}
+
+.catalog-fact .fact-line {
+  display: block;
+}
+
+.catalog-fact .fact-line + .fact-line {
+  margin-top: 0.15rem;
+}
+
+.catalog-fact .fact-link {
+  display: inline-block;
+  margin-top: 0.25rem;
+  margin-right: 0.5rem;
+  color: #5c6bc0;
+  word-break: break-all;
+}
+
+.catalog-fact .fact-link:hover {
+  text-decoration: underline;
 }
 
 .business-footer {

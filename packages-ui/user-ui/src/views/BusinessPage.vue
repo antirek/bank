@@ -12,157 +12,212 @@
       <div v-else-if="business" class="business-content">
         <div class="business-header-section">
           <div class="header-top-row">
-            <div class="header-titles">
-              <h1>{{ business.name }}</h1>
-              <p class="slug">/b/{{ business.slug }}</p>
+            <div class="header-brand">
+              <img
+                v-if="displayLogo"
+                :src="displayLogo"
+                :alt="businessLogoAlt"
+                class="business-logo"
+                width="88"
+                height="88"
+                loading="lazy"
+                decoding="async"
+              />
+              <div class="header-titles">
+                <h1>{{ business.name }}</h1>
+                <p class="slug">/b/{{ business.slug }}</p>
+              </div>
             </div>
             <div class="header-actions">
               <router-link
                 v-if="authStore.isAuthenticated && isOwner"
                 :to="`/my-businesses/${business.businessId}/dialogs`"
-                class="btn btn-primary btn-header"
+                class="btn btn-primary btn-icon-header"
+                title="Обращения"
+                aria-label="Обращения"
               >
-                📨 Обращения
+                <span class="action-icon" aria-hidden="true">📨</span>
               </router-link>
               <button
                 v-else-if="authStore.isAuthenticated && !isOwner"
                 type="button"
-                class="btn btn-primary btn-header"
+                class="btn btn-primary btn-icon-header"
                 :disabled="startingDialog"
+                :title="startingDialog ? 'Открытие диалога…' : 'Начать диалог'"
+                :aria-label="startingDialog ? 'Открытие диалога…' : 'Начать диалог'"
                 @click="handleStartDialog"
               >
-                {{ startingDialog ? 'Открытие...' : '💬 Начать диалог' }}
+                <span class="action-icon" aria-hidden="true">{{ startingDialog ? '⏳' : '💬' }}</span>
               </button>
               <button
                 v-if="authStore.isAuthenticated && !isOwner && !isSubscribed"
                 type="button"
-                class="btn btn-secondary btn-header"
+                class="btn btn-secondary btn-icon-header"
                 :disabled="subscribing"
+                :title="subscribing ? 'Оформление подписки…' : 'Подписаться'"
+                :aria-label="subscribing ? 'Оформление подписки…' : 'Подписаться'"
                 @click="handleSubscribe"
               >
-                {{ subscribing ? 'Подписка...' : '+ Подписаться' }}
+                <span class="action-icon" aria-hidden="true">{{ subscribing ? '⏳' : '➕' }}</span>
               </button>
               <span
                 v-else-if="authStore.isAuthenticated && !isOwner && isSubscribed"
-                class="subscribed-badge subscribed-badge--header"
+                class="subscribed-icon-badge"
+                title="Вы подписаны"
+                role="status"
+                aria-label="Вы подписаны"
               >
-                ✓ Вы подписаны
+                <span class="action-icon action-icon--subscribed" aria-hidden="true">✓</span>
               </span>
               <a
                 v-if="!authStore.isAuthenticated"
                 :href="authUiUrl"
-                class="btn btn-primary btn-header"
+                class="btn btn-primary btn-icon-header"
+                title="Войти"
+                aria-label="Войти"
               >
-                Войти
+                <span class="action-icon" aria-hidden="true">🔑</span>
               </a>
             </div>
           </div>
           <p v-if="business.description" class="description">
             {{ business.description }}
           </p>
-          <!-- Уголок с профилем владельца -->
-          <div v-if="owner" class="owner-section">
-            <OwnerCard
-              :owner-id="owner.userId"
-              :owner-name="owner.name"
-              :owner-phone="owner.phone"
-            />
-          </div>
         </div>
 
-        <div v-if="renderedSections.length" class="card-sections">
-          <section v-for="section in renderedSections" :key="section.id" class="section-card">
-            <h3>{{ sectionTitle(section.type) }}</h3>
-            <template v-if="section.type === 'address'">
-              <p>{{ section.data.address }}</p>
-            </template>
-            <template v-else-if="section.type === 'contacts'">
-              <p v-if="section.data.email">Email: {{ section.data.email }}</p>
-              <p v-if="section.data.website">
-                Сайт: <a :href="section.data.website" target="_blank" rel="noopener noreferrer">{{ section.data.website }}</a>
-              </p>
-              <ul v-if="section.data.phones?.length">
-                <li v-for="phone in section.data.phones" :key="phone">{{ phone }}</li>
-              </ul>
-            </template>
-            <template v-else-if="section.type === 'working_hours'">
-              <ul class="hours-list">
-                <li v-for="day in dayKeys" :key="day">
-                  <strong>{{ dayNames[day] }}:</strong>
-                  <span v-if="section.data[day]?.enabled">{{ section.data[day].from }}-{{ section.data[day].to }}</span>
-                  <span v-else>выходной</span>
-                </li>
-              </ul>
-            </template>
-            <template v-else-if="section.type === 'gallery'">
-              <div class="gallery-grid">
-                <img v-for="img in galleryImages(section)" :key="img" :src="img" alt="Фото бизнеса" />
-              </div>
-            </template>
-          </section>
+        <div class="business-tabs" role="tablist" aria-label="Разделы страницы бизнеса">
+          <button
+            id="tab-news"
+            type="button"
+            class="tab-btn"
+            role="tab"
+            :aria-selected="activeTab === 'news'"
+            :tabindex="activeTab === 'news' ? 0 : -1"
+            @click="activeTab = 'news'"
+          >
+            Новости
+          </button>
+          <button
+            id="tab-info"
+            type="button"
+            class="tab-btn"
+            role="tab"
+            :aria-selected="activeTab === 'info'"
+            :tabindex="activeTab === 'info' ? 0 : -1"
+            @click="activeTab = 'info'"
+          >
+            Инфо
+          </button>
         </div>
 
-        <!-- Блок новостей -->
-        <div class="news-section">
-          <div class="news-header">
-            <h2>Новости</h2>
-            <button
-              v-if="authStore.isAuthenticated && isOwner"
-              @click="showAddNewsForm = !showAddNewsForm"
-              class="btn btn-primary btn-add-news"
-            >
-              {{ showAddNewsForm ? 'Отмена' : '+ Добавить новость' }}
-            </button>
+        <div
+          id="panel-info"
+          class="tab-panel"
+          role="tabpanel"
+          aria-labelledby="tab-info"
+          :hidden="activeTab !== 'info'"
+        >
+          <div v-if="sectionsForDisplay.length" class="card-sections">
+            <section v-for="section in sectionsForDisplay" :key="section.id" :class="sectionCardClass(section.type)">
+              <h3>{{ sectionTitle(section.type) }}</h3>
+              <template v-if="section.type === 'address'">
+                <p>{{ section.data.address }}</p>
+              </template>
+              <template v-else-if="section.type === 'contacts'">
+                <p v-if="section.data.email">Email: {{ section.data.email }}</p>
+                <p v-if="section.data.website">
+                  Сайт: <a :href="section.data.website" target="_blank" rel="noopener noreferrer">{{ section.data.website }}</a>
+                </p>
+                <ul v-if="section.data.phones?.length">
+                  <li v-for="phone in section.data.phones" :key="phone">{{ phone }}</li>
+                </ul>
+              </template>
+              <template v-else-if="section.type === 'working_hours'">
+                <ul class="hours-list">
+                  <li v-for="day in dayKeys" :key="day">
+                    <strong>{{ dayNames[day] }}:</strong>
+                    <span v-if="section.data[day]?.enabled">{{ section.data[day].from }}-{{ section.data[day].to }}</span>
+                    <span v-else>выходной</span>
+                  </li>
+                </ul>
+              </template>
+              <template v-else-if="section.type === 'gallery'">
+                <div class="gallery-grid">
+                  <img v-for="img in galleryImages(section)" :key="img" :src="img" alt="Фото бизнеса" />
+                </div>
+              </template>
+            </section>
           </div>
+          <p v-else class="tab-panel-empty">В карточке пока нет блоков для отображения.</p>
+        </div>
 
-          <!-- Форма добавления новости (только для владельца) -->
-          <div v-if="showAddNewsForm && isOwner" class="add-news-form">
-            <form @submit.prevent="handleAddNews">
-              <div class="form-group">
-                <label for="news-title">Заголовок</label>
-                <input
-                  id="news-title"
-                  v-model="newNews.title"
-                  type="text"
-                  placeholder="Введите заголовок новости"
-                  required
-                />
-              </div>
-              <div class="form-group">
-                <label for="news-content">Текст новости</label>
-                <textarea
-                  id="news-content"
-                  v-model="newNews.content"
-                  placeholder="Введите текст новости"
-                  rows="5"
-                  required
-                ></textarea>
-              </div>
-              <div class="form-actions">
-                <button type="submit" class="btn btn-primary" :disabled="addingNews">
-                  {{ addingNews ? 'Сохранение...' : 'Сохранить' }}
-                </button>
-                <button type="button" @click="cancelAddNews" class="btn btn-secondary">
-                  Отмена
-                </button>
-              </div>
-            </form>
-          </div>
+        <div
+          id="panel-news"
+          class="tab-panel"
+          role="tabpanel"
+          aria-labelledby="tab-news"
+          :hidden="activeTab !== 'news'"
+        >
+          <div class="news-section">
+            <div class="news-header">
+              <h2 class="news-heading">Новости</h2>
+              <button
+                v-if="authStore.isAuthenticated && isOwner"
+                type="button"
+                class="btn btn-primary btn-add-news"
+                @click="showAddNewsForm = !showAddNewsForm"
+              >
+                {{ showAddNewsForm ? 'Отмена' : '+ Добавить новость' }}
+              </button>
+            </div>
 
-          <!-- Список новостей -->
-          <div v-if="newsLoading" class="loading-small">
-            Загрузка новостей...
-          </div>
-          <div v-else-if="news.length === 0" class="no-news">
-            Новостей пока нет
-          </div>
-          <div v-else class="news-list">
-            <div v-for="item in news" :key="item.newsId" class="news-item">
-              <div class="news-item-header">
-                <h3>{{ item.title }}</h3>
-                <span class="news-date">{{ formatDate(item.createdAt) }}</span>
+            <div v-if="showAddNewsForm && isOwner" class="add-news-form">
+              <form @submit.prevent="handleAddNews">
+                <div class="form-group">
+                  <label for="news-title">Заголовок</label>
+                  <input
+                    id="news-title"
+                    v-model="newNews.title"
+                    type="text"
+                    placeholder="Введите заголовок новости"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="news-content">Текст новости</label>
+                  <textarea
+                    id="news-content"
+                    v-model="newNews.content"
+                    placeholder="Введите текст новости"
+                    rows="5"
+                    required
+                  ></textarea>
+                </div>
+                <div class="form-actions">
+                  <button type="submit" class="btn btn-primary" :disabled="addingNews">
+                    {{ addingNews ? 'Сохранение...' : 'Сохранить' }}
+                  </button>
+                  <button type="button" class="btn btn-secondary" @click="cancelAddNews">
+                    Отмена
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <div v-if="newsLoading" class="loading-small">
+              Загрузка новостей...
+            </div>
+            <div v-else-if="news.length === 0" class="no-news">
+              Новостей пока нет
+            </div>
+            <div v-else class="news-list">
+              <div v-for="item in news" :key="item.newsId" class="news-item">
+                <div class="news-item-header">
+                  <h3>{{ item.title }}</h3>
+                  <span class="news-date">{{ formatDate(item.createdAt) }}</span>
+                </div>
+                <p class="news-content">{{ item.content }}</p>
               </div>
-              <p class="news-content">{{ item.content }}</p>
             </div>
           </div>
         </div>
@@ -176,15 +231,15 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import api from '@boqq/api-client';
-import { OwnerCard } from '@boqq/ui';
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const authUiUrl = import.meta.env.VITE_AUTH_UI_URL || 'http://localhost:5174';
 const business = ref(null);
-const owner = ref(null);
 const news = ref([]);
+/** Вкладка контента: по умолчанию задаётся после загрузки новостей. */
+const activeTab = ref('info');
 const loading = ref(true);
 const error = ref('');
 const subscribing = ref(false);
@@ -199,6 +254,8 @@ const newNews = ref({
 });
 const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 const dayNames = { mon: 'Пн', tue: 'Вт', wed: 'Ср', thu: 'Чт', fri: 'Пт', sat: 'Сб', sun: 'Вс' };
+
+const HALF_WIDTH_SECTION_TYPES = new Set(['contacts', 'working_hours']);
 
 // Проверяем, является ли текущий пользователь владельцем бизнеса
 const isOwner = computed(() => {
@@ -222,10 +279,63 @@ const fallbackSections = computed(() => {
   ];
 });
 
+const displayLogo = computed(() => {
+  const b = business.value;
+  if (!b) return '';
+  const fromDoc = (b.logo || '').trim();
+  if (fromDoc) return fromDoc;
+  const hero = b.card?.sections?.find((s) => s.type === 'hero');
+  return (hero?.data?.logo || '').trim();
+});
+
+const businessLogoAlt = computed(() => {
+  const name = business.value?.name?.trim();
+  return name ? `Логотип: ${name}` : 'Логотип бизнеса';
+});
+
 const renderedSections = computed(() => {
   const sections = business.value?.card?.sections?.length ? business.value.card.sections : fallbackSections.value;
-  return sections.filter((s) => s.enabled).sort((a, b) => a.order - b.order);
+  return sections
+    .filter((s) => s.enabled && s.type !== 'hero')
+    .sort((a, b) => a.order - b.order);
 });
+
+/** Порядок для сетки: контакты и время работы подряд, чтобы на широкой сетке были в одной строке. */
+const sectionsForDisplay = computed(() => {
+  const list = renderedSections.value;
+  const duo = list.filter((s) => HALF_WIDTH_SECTION_TYPES.has(s.type)).sort((a, b) => a.order - b.order);
+  const rest = list.filter((s) => !HALF_WIDTH_SECTION_TYPES.has(s.type));
+  if (duo.length === 0) {
+    return list;
+  }
+  const duoInsertOrder = Math.min(...duo.map((s) => s.order));
+  const out = [];
+  let duoInserted = false;
+  for (const s of rest) {
+    if (!duoInserted && s.order > duoInsertOrder) {
+      out.push(...duo);
+      duoInserted = true;
+    }
+    out.push(s);
+  }
+  if (!duoInserted) {
+    out.push(...duo);
+  }
+  return out;
+});
+
+const halfWidthSectionCount = computed(
+  () => renderedSections.value.filter((s) => HALF_WIDTH_SECTION_TYPES.has(s.type)).length
+);
+
+function sectionCardClass(type) {
+  const base = 'section-card';
+  const pairHalves = halfWidthSectionCount.value >= 2;
+  if (HALF_WIDTH_SECTION_TYPES.has(type) && pairHalves) {
+    return `${base} section-card--half`;
+  }
+  return `${base} section-card--wide`;
+}
 
 const sectionTitle = (type) => ({
   address: 'Адрес',
@@ -237,6 +347,10 @@ const sectionTitle = (type) => ({
 
 const galleryImages = (section) => section.data?.images || [];
 
+function applyDefaultTab() {
+  activeTab.value = news.value.length > 0 ? 'news' : 'info';
+}
+
 const loadBusiness = async () => {
   loading.value = true;
   error.value = '';
@@ -244,12 +358,7 @@ const loadBusiness = async () => {
   try {
     const response = await api.get(`/businesses/slug/${route.params.slug}`);
     business.value = response.data.data;
-    
-    // Загружаем информацию о владельце
-    if (business.value?.ownerId) {
-      await loadOwner();
-    }
-    
+
     // Проверяем подписку, если пользователь авторизован
     if (authStore.isAuthenticated) {
       await checkSubscription();
@@ -261,21 +370,6 @@ const loadBusiness = async () => {
     error.value = err.response?.data?.error || 'Бизнес не найден';
   } finally {
     loading.value = false;
-  }
-};
-
-const loadOwner = async () => {
-  try {
-    const response = await api.get(`/users/${business.value.ownerId}`);
-    owner.value = response.data.data;
-  } catch (err) {
-    console.error('Failed to load owner:', err);
-    // Если не удалось загрузить владельца, создаем минимальную информацию
-    owner.value = {
-      userId: business.value.ownerId,
-      name: '',
-      phone: ''
-    };
   }
 };
 
@@ -343,6 +437,7 @@ const loadNews = async () => {
     news.value = [];
   } finally {
     newsLoading.value = false;
+    applyDefaultTab();
   }
 };
 
@@ -361,7 +456,8 @@ const handleAddNews = async () => {
     
     // Добавляем новую новость в начало списка
     news.value.unshift(response.data.data);
-    
+    activeTab.value = 'news';
+
     // Очищаем форму и скрываем её
     newNews.value = { title: '', content: '' };
     showAddNewsForm.value = false;
@@ -439,8 +535,26 @@ onMounted(() => {
   margin-bottom: 0.75rem;
 }
 
+.header-brand {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.business-logo {
+  flex-shrink: 0;
+  width: 88px;
+  height: 88px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid #e8e8e8;
+  background: #f9f9f9;
+}
+
 .header-titles {
-  flex: 1 1 12rem;
+  flex: 1 1 10rem;
   min-width: 0;
 }
 
@@ -475,16 +589,74 @@ onMounted(() => {
   font-size: 1.1rem;
 }
 
-.owner-section {
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #e0e0e0;
+.business-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin: 1.25rem 0 0 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #ddd;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.tab-btn {
+  padding: 0.55rem 1.15rem;
+  border: none;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #555;
+  border-right: 1px solid #ddd;
+  transition: background 0.15s, color 0.15s;
+}
+
+.tab-btn:last-child {
+  border-right: none;
+}
+
+.tab-btn:hover {
+  background: #f3f4fd;
+  color: #333;
+}
+
+.tab-btn[aria-selected='true'] {
+  background: #667eea;
+  color: #fff;
+}
+
+.tab-panel {
+  margin-top: 1.25rem;
+  padding-top: 0.25rem;
+}
+
+.tab-panel-empty {
+  margin: 0;
+  color: #888;
+  font-size: 0.95rem;
 }
 
 .card-sections {
   display: grid;
+  grid-template-columns: 1fr;
   gap: 1rem;
   margin-bottom: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .card-sections {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .section-card--wide {
+    grid-column: 1 / -1;
+  }
+
+  .section-card--half {
+    min-width: 0;
+  }
 }
 
 .section-card {
@@ -519,10 +691,62 @@ onMounted(() => {
   border-radius: 6px;
 }
 
-.btn-header {
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
-  white-space: nowrap;
+.btn-icon-header {
+  box-sizing: border-box;
+  min-width: 2.6rem;
+  min-height: 2.6rem;
+  width: 2.6rem;
+  height: 2.6rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  line-height: 0;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.btn-icon-header:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.btn-icon-header:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.2em;
+  height: 1.2em;
+  font-size: 1.12rem;
+  line-height: 1;
+  transform: translateY(-0.5px);
+}
+
+.action-icon--subscribed {
+  font-size: 1.05rem;
+}
+
+.subscribed-icon-badge {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.6rem;
+  min-height: 2.6rem;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 999px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #c8e6c9;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  font-size: 1.08rem;
+  font-weight: 800;
+  flex-shrink: 0;
 }
 
 .btn-secondary {
@@ -572,33 +796,26 @@ onMounted(() => {
   display: inline-block;
 }
 
-.subscribed-badge--header {
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
-}
-
 @media (max-width: 520px) {
   .header-top-row {
     flex-direction: column;
     align-items: stretch;
   }
 
+  .header-brand {
+    flex-wrap: wrap;
+  }
+
   .header-actions {
     justify-content: flex-start;
   }
 
-  .btn-header {
-    flex: 1 1 auto;
-    min-width: 0;
-    white-space: normal;
-    text-align: center;
-  }
 }
 
 .news-section {
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 1px solid #e0e0e0;
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
 }
 
 .news-header {
@@ -606,9 +823,10 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
+  gap: 0.75rem;
 }
 
-.news-header h2 {
+.news-heading {
   margin: 0;
   color: #333;
   font-size: 1.5rem;
