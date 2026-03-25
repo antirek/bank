@@ -1,6 +1,11 @@
 <template>
   <div class="builder-page">
     <div class="container">
+      <nav class="builder-breadcrumb" aria-label="Контекст редактирования">
+        <router-link to="/my/profile/businesses" class="crumb-link">Мои бизнесы</router-link>
+        <span class="crumb-sep" aria-hidden="true">→</span>
+        <span class="crumb-current" aria-current="page">{{ businessContextTitle }}</span>
+      </nav>
       <div class="header">
         <div class="header-titles">
           <h1>{{ isCreateMode ? 'Новый бизнес' : 'Карточка бизнеса' }}</h1>
@@ -27,7 +32,6 @@
               Предпросмотр
             </button>
           </div>
-          <router-link to="/my/profile/businesses" class="btn btn-secondary">К моим бизнесам</router-link>
         </div>
       </div>
 
@@ -261,6 +265,14 @@ const previewHero = computed(() => {
   return hero?.data || {};
 });
 
+const businessContextTitle = computed(() => {
+  if (isCreateMode.value) return 'Новый бизнес';
+  const name = previewHero.value?.name?.trim();
+  if (name) return name;
+  if (loading.value) return 'Загрузка…';
+  return 'Без названия';
+});
+
 const previewSections = computed(() =>
   [...sections.value]
     .filter((s) => s.enabled && s.type !== 'hero')
@@ -369,7 +381,7 @@ async function save() {
       const res = await api.post('/businesses', { sections: sections.value });
       const id = res.data.data.businessId;
       saveMessage.value = 'Бизнес создан';
-      await router.replace({ path: `/my/businesses/${id}/card-builder` });
+      await router.replace({ path: `/my/profile/businesses/${id}/card-builder` });
       return;
     }
     await api.put(`/businesses/${businessId.value}/card-config`, { sections: sections.value });
@@ -395,19 +407,57 @@ watch(
 .builder-page {
   min-height: 100vh;
   background: #f5f5f5;
-  padding: 2rem 0;
+  padding: 0.4rem 0 1.75rem;
 }
 .container {
-  max-width: 1100px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
 }
+
+.builder-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  margin-bottom: 0.55rem;
+  padding: 0.4rem 0.85rem;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  width: fit-content;
+  max-width: 100%;
+  font-size: 0.92rem;
+}
+
+.crumb-link {
+  color: #667eea;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.crumb-link:hover {
+  text-decoration: underline;
+}
+
+.crumb-sep {
+  color: #999;
+  user-select: none;
+}
+
+.crumb-current {
+  font-weight: 600;
+  color: #333;
+  min-width: 0;
+  word-break: break-word;
+}
+
 .header {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: flex-start;
   gap: 1rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
 }
 .header-titles h1 {
   margin: 0 0 0.35rem 0;

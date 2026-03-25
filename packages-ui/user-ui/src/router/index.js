@@ -30,7 +30,7 @@ const routes = [
   },
   {
     path: '/businesses/:id/edit',
-    redirect: (to) => ({ path: `/my/businesses/${to.params.id}/card-builder`, replace: true })
+    redirect: (to) => ({ path: `/my/profile/businesses/${to.params.id}/card-builder`, replace: true })
   },
   {
     path: '/my-businesses/:businessId/dialogs',
@@ -38,7 +38,17 @@ const routes = [
   },
   {
     path: '/my-businesses/:businessId/card-builder',
-    redirect: (to) => ({ path: `/my/businesses/${to.params.businessId}/card-builder`, replace: true })
+    redirect: (to) => ({
+      path: `/my/profile/businesses/${to.params.businessId}/card-builder`,
+      replace: true
+    })
+  },
+  {
+    path: '/my/businesses/:businessId/card-builder',
+    redirect: (to) => ({
+      path: `/my/profile/businesses/${to.params.businessId}/card-builder`,
+      replace: true
+    })
   },
   {
     path: '/my-businesses/:businessId/dialogs/:dialogId',
@@ -101,6 +111,12 @@ const routes = [
         name: 'ProfileBusinesses',
         component: () => import('../views/MyBusinesses.vue'),
         meta: { requiresAuth: true }
+      },
+      {
+        path: 'businesses/:businessId/card-builder',
+        name: 'BusinessCardBuilder',
+        component: () => import('../views/BusinessCardBuilder.vue'),
+        meta: { requiresAuth: true, cardBuilderMode: 'edit' }
       }
     ]
   },
@@ -122,12 +138,6 @@ const routes = [
     name: 'BusinessDialogs',
     component: () => import('../views/BusinessDialogs.vue'),
     meta: { requiresAuth: true }
-  },
-  {
-    path: '/my/businesses/:businessId/card-builder',
-    name: 'BusinessCardBuilder',
-    component: () => import('../views/BusinessCardBuilder.vue'),
-    meta: { requiresAuth: true, cardBuilderMode: 'edit' }
   },
   {
     path: '/my/businesses/:businessId/dialogs/:dialogId',

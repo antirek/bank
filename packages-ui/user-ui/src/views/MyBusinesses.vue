@@ -43,7 +43,7 @@
                 </span>
               </router-link>
               <router-link
-                :to="`/my/businesses/${business.businessId}/card-builder`"
+                :to="`/my/profile/businesses/${business.businessId}/card-builder`"
                 class="btn-icon"
                 title="Карточка бизнеса"
               >
@@ -131,7 +131,7 @@ onMounted(() => {
 .my-businesses-page {
   min-height: 100vh;
   background: #f5f5f5;
-  padding: 2rem 0;
+  padding: 0.35rem 0 1.75rem;
 }
 
 .container {

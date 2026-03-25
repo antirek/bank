@@ -22,11 +22,11 @@
             Мои подписки
           </a>
         </router-link>
-        <router-link v-slot="{ href, navigate, isExactActive }" :to="{ name: 'ProfileBusinesses' }" custom>
+        <router-link v-slot="{ href, navigate }" :to="{ name: 'ProfileBusinesses' }" custom>
           <a
             :href="href"
             class="subnav-link"
-            :class="{ 'router-link-active': isExactActive }"
+            :class="{ 'router-link-active': isBusinessesSubnavActive }"
             @click="navigate"
           >
             Мои бизнесы
@@ -40,11 +40,28 @@
   </div>
 </template>
 
+<script setup>
+import { computed } from 'vue';
+import { useRoute } from 'vue-router';
+
+const route = useRoute();
+
+/** Список бизнесов и конструктор карточки — один раздел */
+const isBusinessesSubnavActive = computed(() => {
+  const p = route.path;
+  return (
+    p === '/my/profile/businesses' ||
+    p.startsWith('/my/profile/businesses/') ||
+    route.name === 'BusinessCardBuilder'
+  );
+});
+</script>
+
 <style scoped>
 .profile-layout {
   min-height: 100vh;
   background: #f5f5f5;
-  padding: 2rem 0 3rem;
+  padding: 0.85rem 0 2rem;
 }
 
 .container {
@@ -56,7 +73,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0;
-  margin: 0 0 1.25rem 0;
+  margin: 0 0 0.45rem 0;
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid #ddd;
@@ -66,7 +83,7 @@
 }
 
 .subnav-link {
-  padding: 0.55rem 1.1rem;
+  padding: 0.45rem 1rem;
   font-size: 0.92rem;
   font-weight: 600;
   color: #555;
