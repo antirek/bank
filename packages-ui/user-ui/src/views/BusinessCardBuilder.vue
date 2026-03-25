@@ -8,7 +8,7 @@
       </nav>
       <div class="header">
         <div class="header-titles">
-          <h1>{{ isCreateMode ? 'Новый бизнес' : 'Карточка бизнеса' }}</h1>
+          <h1>{{ isCreateMode ? 'Новый бизнес' : businessContextTitle }}</h1>
           <p class="subtitle">
             Заполните секции слева — так же увидят карточку посетители. Сохранение сразу публикует изменения.
           </p>
@@ -31,6 +31,12 @@
             >
               Предпросмотр
             </button>
+          </div>
+          <div v-if="!loading && !error" class="header-save">
+            <button type="button" class="btn btn-primary" :disabled="saving" @click="save">
+              {{ saving ? 'Сохранение...' : isCreateMode ? 'Создать бизнес' : 'Сохранить' }}
+            </button>
+            <span v-if="saveMessage" class="save-message" :class="{ err: saveIsError }">{{ saveMessage }}</span>
           </div>
         </div>
       </div>
@@ -172,13 +178,6 @@
             </template>
           </div>
         </div>
-      </div>
-
-      <div v-if="!loading && !error" class="footer-actions">
-        <button type="button" class="btn btn-primary" :disabled="saving" @click="save">
-          {{ saving ? 'Сохранение...' : isCreateMode ? 'Создать бизнес' : 'Сохранить' }}
-        </button>
-        <span v-if="saveMessage" class="save-message" :class="{ err: saveIsError }">{{ saveMessage }}</span>
       </div>
     </div>
   </div>
@@ -459,8 +458,13 @@ watch(
   gap: 1rem;
   margin-bottom: 1rem;
 }
+.header-titles {
+  flex: 1;
+  min-width: 0;
+}
 .header-titles h1 {
   margin: 0 0 0.35rem 0;
+  word-break: break-word;
 }
 .subtitle {
   margin: 0;
@@ -472,7 +476,16 @@ watch(
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 0.75rem;
+  flex-shrink: 0;
+}
+.header-save {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 .mode-toggle {
   display: flex;
@@ -584,12 +597,6 @@ watch(
   color: #333;
   text-decoration: none;
   display: inline-block;
-}
-.footer-actions {
-  margin-top: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
 }
 .save-message {
   color: #2e7d32;
