@@ -9,6 +9,10 @@ function requireUser(req, res) {
   return true;
 }
 
+function isMms3Unavailable(error) {
+  return error?.code === 'ECONNREFUSED' || String(error?.message || '').includes('ECONNREFUSED');
+}
+
 // Начать диалог с бизнесом
 export const startDialog = async (req, res) => {
   if (!requireUser(req, res)) return;
@@ -250,7 +254,9 @@ export const getMyDialogs = async (req, res) => {
             unreadCount: dialog.unreadCountUser
           };
         } catch (error) {
-          console.error(`Error fetching messages for dialog ${dialog.dialogId}:`, error);
+          if (!isMms3Unavailable(error)) {
+            console.error(`Error fetching messages for dialog ${dialog.dialogId}:`, error);
+          }
           return {
             dialogId: dialog.dialogId,
             businessId: dialog.businessId,
@@ -325,9 +331,7 @@ export const getBusinessDialogs = async (req, res) => {
 
     // Получаем mms3UserId владельца
     const owner = await User.findOne({ userId });
-    if (!owner || !owner.mms3UserId) {
-      return res.status(400).json({ error: 'Owner not registered in mms3' });
-    }
+    const ownerMms3Id = owner?.mms3UserId || null;
 
     // Получаем последние сообщения и unreadCount из mms3
     const dialogsWithMessages = await Promise.all(
@@ -347,20 +351,24 @@ export const getBusinessDialogs = async (req, res) => {
           const lastMessage = messagesResponse.data.data?.[0] || null;
 
           // Получаем unreadCount для владельца из mms3
-          let unreadCount = 0;
-          try {
-            const membersResponse = await mms3Client.get(
-              `/dialogs/${dialog.mms3DialogId}/members`,
-              {
-                params: {
-                  filter: `(userId,eq,${owner.mms3UserId})`
+          let unreadCount = dialog.unreadCountOwner || 0;
+          if (ownerMms3Id) {
+            try {
+              const membersResponse = await mms3Client.get(
+                `/dialogs/${dialog.mms3DialogId}/members`,
+                {
+                  params: {
+                    filter: `(userId,eq,${ownerMms3Id})`
+                  }
                 }
+              );
+              const ownerMember = membersResponse.data.data?.find((m) => m.userId === ownerMms3Id);
+              unreadCount = ownerMember?.state?.unreadCount || unreadCount;
+            } catch (memberError) {
+              if (!isMms3Unavailable(memberError)) {
+                console.error(`Error fetching member info for dialog ${dialog.dialogId}:`, memberError);
               }
-            );
-            const ownerMember = membersResponse.data.data?.find(m => m.userId === owner.mms3UserId);
-            unreadCount = ownerMember?.state?.unreadCount || 0;
-          } catch (memberError) {
-            console.error(`Error fetching member info for dialog ${dialog.dialogId}:`, memberError);
+            }
           }
 
           return {
@@ -377,7 +385,9 @@ export const getBusinessDialogs = async (req, res) => {
             unreadCount: unreadCount
           };
         } catch (error) {
-          console.error(`Error fetching messages for dialog ${dialog.dialogId}:`, error);
+          if (!isMms3Unavailable(error)) {
+            console.error(`Error fetching messages for dialog ${dialog.dialogId}:`, error);
+          }
           return {
             dialogId: dialog.dialogId,
             userId: dialog.userId,
@@ -385,7 +395,7 @@ export const getBusinessDialogs = async (req, res) => {
             userPhone: userMap[dialog.userId]?.phone || '',
             lastMessage: null,
             lastMessageAt: dialog.lastMessageAt,
-            unreadCount: 0
+            unreadCount: dialog.unreadCountOwner || 0
           };
         }
       })
@@ -471,10 +481,25 @@ export const getDialogMessages = async (req, res) => {
       params.filter = `(createdAt,lt,${before})`;
     }
 
-    const messagesResponse = await mms3Client.get(
-      `/dialogs/${dialog.mms3DialogId}/messages`,
-      { params }
-    );
+    let messagesResponse;
+    try {
+      messagesResponse = await mms3Client.get(
+        `/dialogs/${dialog.mms3DialogId}/messages`,
+        { params }
+      );
+    } catch (mms3Error) {
+      if (isMms3Unavailable(mms3Error)) {
+        return res.json({
+          data: {
+            messages: [],
+            hasMore: false,
+            total: 0,
+            serviceUnavailable: true
+          }
+        });
+      }
+      throw mms3Error;
+    }
 
     // Получаем информацию о пользователях для отображения имен
     const senderIds = [...new Set(messagesResponse.data.data?.map(m => m.senderId) || [])];
@@ -486,10 +511,14 @@ export const getDialogMessages = async (req, res) => {
       }
     });
 
+    const currentUser = await User.findOne({ userId });
+    const currentUserMms3Id = currentUser?.mms3UserId || userId.replace(/\./g, '_');
+
     const messages = (messagesResponse.data.data || []).map(message => ({
       messageId: message.messageId,
       senderId: message.senderId,
       senderName: userMap[message.senderId]?.name || userMap[message.senderId]?.phone || 'Unknown',
+      isOwn: message.senderId === currentUserMms3Id,
       content: message.content,
       type: message.type,
       createdAt: message.createdAt,
@@ -536,18 +565,26 @@ export const sendMessage = async (req, res) => {
     // Получаем mms3UserId пользователя
     const user = await User.findOne({ userId });
     if (!user || !user.mms3UserId) {
-      return res.status(400).json({ error: 'User not registered in mms3' });
+      return res.status(503).json({ error: 'Сервис сообщений временно недоступен' });
     }
 
     // Отправляем сообщение через mms3
-    const messageResponse = await mms3Client.post(
-      `/dialogs/${dialog.mms3DialogId}/messages`,
-      {
-        senderId: user.mms3UserId,
-        content: content.trim(),
-        type: 'internal.text'
+    let messageResponse;
+    try {
+      messageResponse = await mms3Client.post(
+        `/dialogs/${dialog.mms3DialogId}/messages`,
+        {
+          senderId: user.mms3UserId,
+          content: content.trim(),
+          type: 'internal.text'
+        }
+      );
+    } catch (mms3Error) {
+      if (isMms3Unavailable(mms3Error)) {
+        return res.status(503).json({ error: 'Сервис сообщений временно недоступен' });
       }
-    );
+      throw mms3Error;
+    }
 
     // Обновляем диалог
     dialog.lastMessageAt = new Date();
@@ -566,6 +603,7 @@ export const sendMessage = async (req, res) => {
         messageId: messageResponse.data.messageId,
         senderId: user.mms3UserId,
         senderName: user.name || user.phone,
+        isOwn: true,
         content: content.trim(),
         type: 'internal.text',
         createdAt: messageResponse.data.createdAt,

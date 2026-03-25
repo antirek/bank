@@ -23,7 +23,13 @@
             :key="message.messageId"
             :class="['message', { 'message-own': isOwnMessage(message) }]"
           >
+            <div class="message-author-row">
+              <div class="message-avatar" :class="{ own: isOwnMessage(message) }">
+                {{ getInitials(getAuthorName(message)) }}
+              </div>
+            </div>
             <div class="message-content">
+              <div class="message-author-name">{{ getAuthorName(message) }}</div>
               <p class="message-text">{{ message.content }}</p>
               <span class="message-time">{{ formatTime(message.createdAt) }}</span>
             </div>
@@ -99,10 +105,13 @@ const computedBackUrl = computed(() => {
   if (dialogInfo.value.businessSlug) {
     return `/b/${dialogInfo.value.businessSlug}`;
   }
-  return '/';
+  return '/my/dialogs';
 });
 
 const isOwnMessage = (message) => {
+  if (typeof message?.isOwn === 'boolean') {
+    return message.isOwn;
+  }
   // Определяем, является ли сообщение своим, сравнивая senderId с mms3UserId
   // Если mms3UserId еще не загружен, используем информацию о диалоге
   if (dialogInfo.value.currentUserMms3Id) {
@@ -112,6 +121,21 @@ const isOwnMessage = (message) => {
   // Временная проверка: если текущий пользователь - владелец, то сообщения от него справа
   // Это будет работать после загрузки информации о пользователе
   return false; // По умолчанию не свое, пока не загрузим mms3UserId
+};
+
+const getAuthorName = (message) => {
+  if (isOwnMessage(message)) {
+    return authStore.user?.name || 'Вы';
+  }
+  return message.senderName || 'Собеседник';
+};
+
+const getInitials = (name) => {
+  const safe = String(name || '').trim();
+  if (!safe) return '?';
+  const parts = safe.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
+  return `${parts[0].slice(0, 1)}${parts[1].slice(0, 1)}`.toUpperCase();
 };
 
 const formatTime = (timestamp) => {
@@ -336,10 +360,36 @@ watch(() => props.dialogId, async (newId) => {
 .message {
   display: flex;
   justify-content: flex-start;
+  gap: 0.55rem;
+  align-items: flex-end;
 }
 
 .message-own {
   justify-content: flex-end;
+}
+
+.message-author-row {
+  display: flex;
+  align-items: flex-end;
+}
+
+.message-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e8ecff;
+  color: #3f51b5;
+  font-size: 0.78rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.message-avatar.own {
+  background: #e8f5e9;
+  color: #2e7d32;
 }
 
 .message-content {
@@ -351,6 +401,17 @@ watch(() => props.dialogId, async (newId) => {
 
 .message-own .message-content {
   align-items: flex-end;
+  order: 1;
+}
+
+.message-own .message-author-row {
+  order: 2;
+}
+
+.message-author-name {
+  font-size: 0.8rem;
+  color: #7a7a7a;
+  margin: 0 0 0.1rem 0.25rem;
 }
 
 .message-text {

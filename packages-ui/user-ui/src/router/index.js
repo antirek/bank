@@ -15,26 +15,58 @@ const routes = [
     name: 'Login',
     component: () => import('../views/LoginRedirect.vue')
   },
+  // Старые URL → /my/...
+  { path: '/profile', redirect: '/my/profile' },
+  { path: '/feed', redirect: '/my/feed' },
+  { path: '/my-dialogs', redirect: '/my/dialogs' },
+  { path: '/my-subscriptions', redirect: '/my/subscriptions' },
+  { path: '/my-businesses', redirect: '/my/businesses' },
+  { path: '/create-business', redirect: '/my/create-business' },
   {
-    path: '/create-business',
+    path: '/dialogs/:dialogId',
+    redirect: (to) => ({ path: `/my/dialogs/${to.params.dialogId}`, replace: true })
+  },
+  {
+    path: '/businesses/:id/edit',
+    redirect: (to) => ({ path: `/my/businesses/${to.params.id}/card-builder`, replace: true })
+  },
+  {
+    path: '/my-businesses/:businessId/dialogs',
+    redirect: (to) => ({ path: `/my/businesses/${to.params.businessId}/dialogs`, replace: true })
+  },
+  {
+    path: '/my-businesses/:businessId/card-builder',
+    redirect: (to) => ({ path: `/my/businesses/${to.params.businessId}/card-builder`, replace: true })
+  },
+  {
+    path: '/my-businesses/:businessId/dialogs/:dialogId',
+    redirect: (to) => ({
+      path: `/my/businesses/${to.params.businessId}/dialogs/${to.params.dialogId}`,
+      replace: true
+    })
+  },
+  {
+    path: '/my/create-business',
     name: 'CreateBusiness',
     component: () => import('../views/BusinessCardBuilder.vue'),
     meta: { requiresAuth: true, cardBuilderMode: 'create' }
   },
   {
-    path: '/my-businesses',
+    path: '/my/businesses',
     name: 'MyBusinesses',
     component: () => import('../views/MyBusinesses.vue'),
     meta: { requiresAuth: true }
   },
   {
-    path: '/businesses/:id/edit',
-    redirect: (to) => ({ path: `/my-businesses/${to.params.id}/card-builder`, replace: true })
-  },
-  {
-    path: '/my-subscriptions',
+    path: '/my/subscriptions',
     name: 'MySubscriptions',
     component: () => import('../views/MySubscriptions.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/my/feed',
+    name: 'NewsFeed',
+    component: () => import('../views/NewsFeed.vue'),
     meta: { requiresAuth: true }
   },
   {
@@ -52,44 +84,44 @@ const routes = [
     redirect: (to) => ({ path: `/b/${to.params.slug}`, replace: true })
   },
   {
-    path: '/profile',
+    path: '/my/profile',
     name: 'Profile',
     component: () => import('../views/Profile.vue'),
     meta: { requiresAuth: true }
   },
   {
-    path: '/my-dialogs',
+    path: '/my/dialogs',
     name: 'MyDialogs',
     component: () => import('../views/MyDialogs.vue'),
     meta: { requiresAuth: true }
   },
   {
-    path: '/dialogs/:dialogId',
+    path: '/my/dialogs/:dialogId',
     name: 'DialogView',
     component: () => import('../views/DialogView.vue'),
     meta: { requiresAuth: true },
     props: true
   },
   {
-    path: '/my-businesses/:businessId/dialogs',
+    path: '/my/businesses/:businessId/dialogs',
     name: 'BusinessDialogs',
     component: () => import('../views/BusinessDialogs.vue'),
     meta: { requiresAuth: true }
   },
   {
-    path: '/my-businesses/:businessId/card-builder',
+    path: '/my/businesses/:businessId/card-builder',
     name: 'BusinessCardBuilder',
     component: () => import('../views/BusinessCardBuilder.vue'),
     meta: { requiresAuth: true, cardBuilderMode: 'edit' }
   },
   {
-    path: '/my-businesses/:businessId/dialogs/:dialogId',
+    path: '/my/businesses/:businessId/dialogs/:dialogId',
     name: 'BusinessDialogView',
     component: () => import('../views/DialogView.vue'),
     meta: { requiresAuth: true },
     props: (route) => ({
       dialogId: route.params.dialogId,
-      backUrl: `/my-businesses/${route.params.businessId}/dialogs`
+      backUrl: `/my/businesses/${route.params.businessId}/dialogs`
     })
   },
   {
@@ -104,15 +136,13 @@ const router = createRouter({
   routes
 });
 
-// Navigation guard для проверки авторизации
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
-  
-  // Если есть токен, но нет пользователя, пытаемся восстановить
+
   if (authStore.token && !authStore.user) {
     await authStore.restoreUser();
   }
-  
+
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     window.location.href = authUiUrl;
     return;

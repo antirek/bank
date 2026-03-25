@@ -4,7 +4,7 @@
       <div class="header">
         <div class="header-left">
           <h1>Каталог бизнесов</h1>
-          <router-link v-if="authStore.isAuthenticated" to="/profile" class="profile-link">Мой профиль →</router-link>
+          <router-link v-if="authStore.isAuthenticated" to="/my/profile" class="profile-link">Мой профиль →</router-link>
         </div>
       </div>
 

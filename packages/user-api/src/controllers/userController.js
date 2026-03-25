@@ -1,4 +1,4 @@
-import { User } from '@boqq/shared/models';
+import { User, BusinessSubscription } from '@boqq/shared/models';
 
 export const getUsers = async (req, res) => {
   try {
@@ -15,7 +15,16 @@ export const getUserById = async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    res.json({ data: user });
+    const subscriptionsCount = await BusinessSubscription.countDocuments({
+      userId: req.params.userId,
+      isActive: true
+    });
+    res.json({
+      data: {
+        ...user.toObject(),
+        subscriptionsCount
+      }
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

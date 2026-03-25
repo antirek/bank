@@ -4,7 +4,7 @@
       <div class="header">
         <div class="header-left">
           <h1>Мои подписки</h1>
-          <router-link to="/profile" class="profile-link">Мой профиль →</router-link>
+          <router-link to="/my/profile" class="profile-link">Мой профиль →</router-link>
         </div>
       </div>
 

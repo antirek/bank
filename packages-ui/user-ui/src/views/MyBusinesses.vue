@@ -4,9 +4,9 @@
       <div class="header">
         <div class="header-left">
           <h1>Мои бизнесы</h1>
-          <router-link to="/profile" class="profile-link">Мой профиль →</router-link>
+          <router-link to="/my/profile" class="profile-link">Мой профиль →</router-link>
         </div>
-        <router-link to="/create-business" class="btn btn-primary">
+        <router-link to="/my/create-business" class="btn btn-primary">
           + Создать бизнес
         </router-link>
       </div>
@@ -21,7 +21,7 @@
 
       <div v-else-if="businesses.length === 0" class="empty-state">
         <p>У вас пока нет бизнесов</p>
-        <router-link to="/create-business" class="btn btn-primary">
+        <router-link to="/my/create-business" class="btn btn-primary">
           Создать первый бизнес
         </router-link>
       </div>
@@ -36,7 +36,7 @@
             <h3>{{ business.name }}</h3>
             <div class="business-actions">
               <router-link
-                :to="`/my-businesses/${business.businessId}/dialogs`"
+                :to="`/my/businesses/${business.businessId}/dialogs`"
                 class="btn-icon dialogs-link"
                 title="Диалоги"
               >
@@ -46,7 +46,7 @@
                 </span>
               </router-link>
               <router-link
-                :to="`/my-businesses/${business.businessId}/card-builder`"
+                :to="`/my/businesses/${business.businessId}/card-builder`"
                 class="btn-icon"
                 title="Карточка бизнеса"
               >

@@ -31,7 +31,7 @@
             <div class="header-actions">
               <router-link
                 v-if="authStore.isAuthenticated && isOwner"
-                :to="`/my-businesses/${business.businessId}/dialogs`"
+                :to="`/my/businesses/${business.businessId}/dialogs`"
                 class="btn btn-primary btn-icon-header"
                 title="Обращения"
                 aria-label="Обращения"
@@ -414,7 +414,7 @@ const handleStartDialog = async () => {
     const response = await api.post(`/businesses/${business.value.businessId}/dialogs/start`);
     const dialogId = response.data.data.dialogId;
     // Переходим на страницу диалога
-    router.push(`/dialogs/${dialogId}`);
+    router.push(`/my/dialogs/${dialogId}`);
   } catch (err) {
     const errorMessage = err.response?.data?.error || err.message || 'Ошибка при создании диалога';
     alert(errorMessage);

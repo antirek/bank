@@ -27,7 +27,7 @@
               Предпросмотр
             </button>
           </div>
-          <router-link to="/my-businesses" class="btn btn-secondary">К моим бизнесам</router-link>
+          <router-link to="/my/businesses" class="btn btn-secondary">К моим бизнесам</router-link>
         </div>
       </div>
 
@@ -369,7 +369,7 @@ async function save() {
       const res = await api.post('/businesses', { sections: sections.value });
       const id = res.data.data.businessId;
       saveMessage.value = 'Бизнес создан';
-      await router.replace({ path: `/my-businesses/${id}/card-builder` });
+      await router.replace({ path: `/my/businesses/${id}/card-builder` });
       return;
     }
     await api.put(`/businesses/${businessId.value}/card-config`, { sections: sections.value });

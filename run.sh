@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -e
 
-
-MMS3_API_URL="https://tubo-mms3-tenant-api.services.mobilon.ru/"
-MMS3_API_KEY="chat3_de2b79b6159abaf8cb1145ec95b8136146483d1d34770236014932e13a327fc1"
-
+# Важно: экспортируем, чтобы значения были доступны всем подпроцессам (user-api/auth-api и т.д.)
+# Для mms3 нужен API-префикс /api, иначе получаем 404 на /dialogs
+export MMS3_API_URL="${MMS3_API_URL:-https://tubo-mms3-tenant-api.services.mobilon.ru/api}"
+export MMS3_API_KEY="${MMS3_API_KEY:-chat3_de2b79b6159abaf8cb1145ec95b8136146483d1d34770236014932e13a327fc1}"
+export MMS3_TENANT_ID="${MMS3_TENANT_ID:-tnt_default}"
 
 # Порты сервисов
 USER_API_PORT="${USER_API_PORT:-3101}"

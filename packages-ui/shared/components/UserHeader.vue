@@ -1,21 +1,27 @@
 <template>
   <div v-if="authStore?.isAuthenticated && !authStore?.isRestoring" class="user-header">
     <div class="user-header-content">
-      <router-link :to="`/users/${authStore.user?.userId}`" class="user-info-link">
-        <div class="avatar-mini">
-          {{ userInitials }}
-        </div>
-        <div class="user-details">
-          <span class="user-name">{{ authStore.user?.name || authStore.user?.phone || 'Пользователь' }}</span>
-          <span class="user-phone">{{ authStore.user?.phone }}</span>
-        </div>
-      </router-link>
-      <router-link to="/catalog" class="catalog-link">
-        Каталог
-      </router-link>
-      <button @click="handleLogout" class="btn-logout-mini" title="Выйти">
-        Выйти
-      </button>
+      <div class="user-header-left">
+        <router-link to="/my/profile" class="user-info-link">
+          <div class="avatar-mini">
+            {{ userInitials }}
+          </div>
+          <div class="user-details">
+            <span class="user-name">{{ authStore.user?.name || authStore.user?.phone || 'Пользователь' }}</span>
+            <span class="user-phone">{{ authStore.user?.phone }}</span>
+          </div>
+        </router-link>
+        <nav class="user-nav user-nav--near-user" aria-label="Лента и чаты">
+        <router-link to="/my/feed" class="nav-link">Лента</router-link>
+        <router-link to="/my/dialogs" class="nav-link">Чаты</router-link>
+        </nav>
+      </div>
+      <div class="user-header-right">
+        <router-link to="/catalog" class="nav-link">Каталог</router-link>
+        <button @click="handleLogout" class="btn-logout-mini" title="Выйти">
+          Выйти
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -64,7 +70,23 @@ const handleLogout = () => {
   padding: 0.75rem 1.5rem;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 1rem;
+}
+
+.user-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.user-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .user-info-link {
@@ -74,7 +96,7 @@ const handleLogout = () => {
   text-decoration: none;
   color: inherit;
   transition: opacity 0.2s;
-  flex: 1;
+  min-width: 0;
 }
 
 .user-info-link:hover {
@@ -112,21 +134,36 @@ const handleLogout = () => {
   color: #666;
 }
 
-.catalog-link {
-  padding: 0.5rem 1rem;
+.user-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  flex-shrink: 0;
+}
+
+.user-nav--near-user {
+  padding-left: 0.15rem;
+}
+
+.nav-link {
+  padding: 0.5rem 0.85rem;
   color: #667eea;
   text-decoration: none;
   font-weight: 500;
   font-size: 0.9rem;
   border-radius: 6px;
   transition: all 0.2s;
-  margin-right: 0.5rem;
-  flex-shrink: 0;
+  white-space: nowrap;
 }
 
-.catalog-link:hover {
+.nav-link:hover {
   background: #f0f0f0;
   color: #5568d3;
+}
+
+.nav-link.router-link-active {
+  background: #eef0fb;
+  color: #4c63d2;
 }
 
 .btn-logout-mini {
@@ -149,6 +186,13 @@ const handleLogout = () => {
 @media (max-width: 768px) {
   .user-header-content {
     padding: 0.75rem 1rem;
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+  }
+
+  .user-header-left {
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   .user-phone {
@@ -161,6 +205,11 @@ const handleLogout = () => {
 
   .btn-logout-mini {
     padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  .nav-link {
+    padding: 0.45rem 0.65rem;
     font-size: 0.85rem;
   }
 }

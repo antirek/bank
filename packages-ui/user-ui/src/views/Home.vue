@@ -5,7 +5,7 @@
       <p>Система общения бизнеса и клиентов</p>
       <div class="auth-section">
       <div v-if="authStore.isAuthenticated" class="user-info">
-        <router-link to="/profile" class="profile-link-header">
+        <router-link to="/my/profile" class="profile-link-header">
           <span>Привет, {{ authStore.user?.name || authStore.user?.phone }}!</span>
         </router-link>
         <button @click="handleLogout" class="btn-logout">Выйти</button>
@@ -15,13 +15,13 @@
     </header>
     <main class="main">
       <div v-if="authStore.isAuthenticated" class="actions">
-        <router-link to="/my-businesses" class="btn-create">
+        <router-link to="/my/businesses" class="btn-create">
           Мои бизнесы
         </router-link>
-        <router-link to="/my-subscriptions" class="btn-create">
+        <router-link to="/my/subscriptions" class="btn-create">
           Мои подписки
         </router-link>
-        <router-link to="/create-business" class="btn-create">
+        <router-link to="/my/create-business" class="btn-create">
           + Создать бизнес
         </router-link>
       </div>

@@ -22,7 +22,7 @@
         <router-link
           v-for="dialog in dialogs"
           :key="dialog.dialogId"
-          :to="`/dialogs/${dialog.dialogId}`"
+          :to="`/my/dialogs/${dialog.dialogId}`"
           class="dialog-item"
         >
           <div class="dialog-info">
