@@ -44,12 +44,12 @@
 .profile-layout {
   min-height: 100vh;
   background: #f5f5f5;
-  padding: 2rem 1rem 3rem;
+  padding: 2rem 0 3rem;
 }
 
 .container {
-  max-width: 900px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
 }
 
 .profile-subnav {

@@ -65,9 +65,9 @@ const handleLogout = () => {
 }
 
 .user-header-content {
-  max-width: 1200px;
+  max-width: var(--app-content-max-width, 1200px);
   margin: 0 auto;
-  padding: 0.75rem 1.5rem;
+  padding: 0.75rem var(--app-content-padding-x, 1.5rem);
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -185,7 +185,7 @@ const handleLogout = () => {
 
 @media (max-width: 768px) {
   .user-header-content {
-    padding: 0.75rem 1rem;
+    padding: 0.75rem var(--app-content-padding-x, 1rem);
     flex-wrap: wrap;
     row-gap: 0.5rem;
   }

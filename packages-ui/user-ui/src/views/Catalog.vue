@@ -254,12 +254,12 @@ onMounted(async () => {
 .catalog-page {
   min-height: 100vh;
   background: #f5f5f5;
-  padding: 2rem;
+  padding: 2rem 0;
 }
 
 .container {
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
 }
 
 .header {

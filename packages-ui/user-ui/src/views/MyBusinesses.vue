@@ -2,10 +2,7 @@
   <div class="my-businesses-page">
     <div class="container">
       <div class="header">
-        <div class="header-left">
-          <h1>Мои бизнесы</h1>
-          <router-link to="/my/profile" class="profile-link">Мой профиль →</router-link>
-        </div>
+        <h1>Мои бизнесы</h1>
         <router-link to="/my/create-business" class="btn btn-primary">
           + Создать бизнес
         </router-link>
@@ -134,12 +131,12 @@ onMounted(() => {
 .my-businesses-page {
   min-height: 100vh;
   background: #f5f5f5;
-  padding: 2rem;
+  padding: 2rem 0;
 }
 
 .container {
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
 }
 
 .header {
@@ -147,27 +144,11 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
-.header-left {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.profile-link {
-  color: #667eea;
-  text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: color 0.2s;
-}
-
-.profile-link:hover {
-  color: #5568d3;
-}
-
-h1 {
+.header h1 {
   margin: 0;
   color: #333;
 }

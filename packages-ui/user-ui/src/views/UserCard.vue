@@ -99,7 +99,7 @@ onMounted(() => {
 .user-card-page {
   min-height: 100vh;
   background: #f5f5f5;
-  padding: 2rem;
+  padding: 2rem 0;
 }
 
 .container {

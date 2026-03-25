@@ -102,7 +102,7 @@ onMounted(loadFeed);
 .container {
   max-width: 720px;
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 0;
 }
 
 .header {

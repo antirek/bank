@@ -99,7 +99,7 @@ onMounted(() => {
 .my-dialogs-page {
   min-height: calc(100vh - 70px);
   background: #f5f5f5;
-  padding: 2rem;
+  padding: 2rem 0;
 }
 
 .container {
