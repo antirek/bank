@@ -9,6 +9,7 @@
     </div>
 
     <div v-else class="profile-content">
+      <h1 class="page-title">Мой профиль</h1>
       <div class="profile-summary">
         <div class="avatar-wrap">
           <img
@@ -122,6 +123,13 @@ onMounted(() => {
   border-radius: 12px;
   padding: 2rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.page-title {
+  margin: 0 0 1.5rem 0;
+  color: #333;
+  font-size: 1.65rem;
+  font-weight: 700;
 }
 
 .profile-summary {

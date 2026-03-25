@@ -1,16 +1,36 @@
 <template>
   <div class="profile-layout">
     <div class="container">
-      <h1 class="layout-title">Мой профиль</h1>
       <nav class="profile-subnav" aria-label="Разделы профиля">
-        <router-link :to="{ name: 'ProfileHome' }" class="subnav-link">
-          Обзор
+        <router-link v-slot="{ href, navigate, isExactActive }" :to="{ name: 'ProfileHome' }" custom>
+          <a
+            :href="href"
+            class="subnav-link"
+            :class="{ 'router-link-active': isExactActive }"
+            @click="navigate"
+          >
+            Мой профиль
+          </a>
         </router-link>
-        <router-link :to="{ name: 'ProfileSubscriptions' }" class="subnav-link">
-          Мои подписки
+        <router-link v-slot="{ href, navigate, isExactActive }" :to="{ name: 'ProfileSubscriptions' }" custom>
+          <a
+            :href="href"
+            class="subnav-link"
+            :class="{ 'router-link-active': isExactActive }"
+            @click="navigate"
+          >
+            Мои подписки
+          </a>
         </router-link>
-        <router-link :to="{ name: 'ProfileBusinesses' }" class="subnav-link">
-          Мои бизнесы
+        <router-link v-slot="{ href, navigate, isExactActive }" :to="{ name: 'ProfileBusinesses' }" custom>
+          <a
+            :href="href"
+            class="subnav-link"
+            :class="{ 'router-link-active': isExactActive }"
+            @click="navigate"
+          >
+            Мои бизнесы
+          </a>
         </router-link>
       </nav>
       <div class="profile-outlet">
@@ -32,17 +52,11 @@
   margin: 0 auto;
 }
 
-.layout-title {
-  margin: 0 0 1rem 0;
-  color: #333;
-  font-size: 1.65rem;
-}
-
 .profile-subnav {
   display: flex;
   flex-wrap: wrap;
   gap: 0;
-  margin-bottom: 1.25rem;
+  margin: 0 0 1.25rem 0;
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid #ddd;
@@ -59,9 +73,10 @@
   text-decoration: none;
   border-right: 1px solid #ddd;
   transition: background 0.15s, color 0.15s;
+  display: inline-block;
 }
 
-.subnav-link:last-child {
+.profile-subnav > :last-child .subnav-link {
   border-right: none;
 }
 
