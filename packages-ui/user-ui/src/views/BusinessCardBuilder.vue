@@ -8,33 +8,52 @@
       </nav>
       <div class="header">
         <div class="header-titles">
-          <h1>{{ isCreateMode ? 'Новый бизнес' : businessContextTitle }}</h1>
-          <p class="subtitle">
-            Заполните секции слева — так же увидят карточку посетители. Сохранение сразу публикует изменения.
-          </p>
-        </div>
-        <div class="header-actions">
-          <div class="mode-toggle" role="group" aria-label="Режим">
+          <div class="header-title-row">
+            <h1>{{ isCreateMode ? 'Новый бизнес' : businessContextTitle }}</h1>
             <button
               type="button"
-              class="mode-btn"
-              :class="{ active: uiMode === 'edit' }"
-              @click="uiMode = 'edit'"
+              class="help-icon-btn"
+              :title="builderHelpText"
+              :aria-label="builderHelpText"
             >
-              Редактирование
-            </button>
-            <button
-              type="button"
-              class="mode-btn"
-              :class="{ active: uiMode === 'preview' }"
-              @click="uiMode = 'preview'"
-            >
-              Предпросмотр
+              <span class="help-icon-q" aria-hidden="true">?</span>
             </button>
           </div>
+        </div>
+        <div class="header-actions">
           <div v-if="!loading && !error" class="header-save">
             <button type="button" class="btn btn-primary" :disabled="saving" @click="save">
               {{ saving ? 'Сохранение...' : isCreateMode ? 'Создать бизнес' : 'Сохранить' }}
+            </button>
+            <button
+              type="button"
+              class="open-public-card-btn"
+              :disabled="!cardPublicHref"
+              :title="cardPublicHref ? 'Открыть страницу карточки в новой вкладке' : 'Укажите slug в секции «Основное»'"
+              :aria-label="
+                cardPublicHref
+                  ? 'Открыть страницу карточки в новой вкладке'
+                  : 'Сначала укажите slug в секции «Основное»'
+              "
+              @click="openPublicCard"
+            >
+              <svg
+                class="open-public-card-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
             </button>
             <span v-if="saveMessage" class="save-message" :class="{ err: saveIsError }">{{ saveMessage }}</span>
           </div>
@@ -45,10 +64,19 @@
       <div v-else-if="error" class="error-message">{{ error }}</div>
       <div v-else class="builder-layout">
         <div class="sections-panel">
-          <h3>Секции карточки</h3>
-          <p class="hint">Клик по блоку — выбрать для редактирования. Галочка — показать на публичной странице.</p>
+          <div class="panel-title-row">
+            <h3>Секции карточки</h3>
+            <button
+              type="button"
+              class="help-icon-btn"
+              :title="sectionsHelpText"
+              :aria-label="sectionsHelpText"
+            >
+              <span class="help-icon-q" aria-hidden="true">?</span>
+            </button>
+          </div>
           <div
-            v-for="(section, idx) in sections"
+            v-for="section in sections"
             :key="section.id"
             class="section-item"
             :class="{ active: selectedSectionId === section.id, disabled: !section.enabled }"
@@ -58,20 +86,19 @@
             @keydown.enter.prevent="selectSection(section.id)"
             @keydown.space.prevent="selectSection(section.id)"
           >
-            <div class="section-row">
-              <label class="enabled-toggle" @click.stop>
-                <input v-model="section.enabled" type="checkbox" />
-                <span class="section-title">{{ titleByType(section.type) }}</span>
-              </label>
-              <div class="row-actions" @click.stop>
-                <button type="button" class="btn btn-small" :disabled="idx === 0" @click="moveUp(idx)">↑</button>
-                <button type="button" class="btn btn-small" :disabled="idx === sections.length - 1" @click="moveDown(idx)">↓</button>
-              </div>
+            <div class="enabled-toggle">
+              <input
+                v-model="section.enabled"
+                type="checkbox"
+                class="section-enabled-cb"
+                :aria-label="`Показать на сайте: ${titleByType(section.type)}`"
+              />
+              <span class="section-title">{{ titleByType(section.type) }}</span>
             </div>
           </div>
         </div>
 
-        <div v-if="uiMode === 'edit'" class="editor-panel">
+        <div class="editor-panel">
           <h3>{{ selectedSection ? `Поле: ${titleByType(selectedSection.type)}` : 'Выберите секцию' }}</h3>
 
           <template v-if="selectedSection?.type === 'hero'">
@@ -134,8 +161,7 @@
           </template>
         </div>
 
-        <div v-else class="preview-panel">
-          <h3>Как увидят гости</h3>
+        <div class="preview-panel" role="region" aria-label="Как страница увидят посетители">
           <div class="preview-card">
             <div class="preview-hero">
               <img v-if="previewHero.logo" :src="previewHero.logo" alt="" class="preview-logo" />
@@ -193,6 +219,12 @@ import {
   EXAMPLE_LOGO_URL
 } from '../lib/loremFlickr.js';
 
+const builderHelpText =
+  'Секции, поля выбранной секции и предпросмотр рядом — изменения видны сразу. Сохранение публикует карточку.';
+
+const sectionsHelpText =
+  'Клик по названию или строке — выбрать секцию. Чекбокс — только показ на публичной странице.';
+
 const route = useRoute();
 const router = useRouter();
 
@@ -204,7 +236,6 @@ const saving = ref(false);
 const error = ref('');
 const saveMessage = ref('');
 const saveIsError = ref(false);
-const uiMode = ref('edit');
 
 const sections = ref([]);
 const selectedSectionId = ref('');
@@ -278,6 +309,22 @@ const previewSections = computed(() =>
     .sort((a, b) => a.order - b.order)
 );
 
+/** Публичная страница `/b/:slug` — slug как после сохранения (только a-z, 0-9, дефис) */
+const cardPublicHref = computed(() => {
+  const raw = String(previewHero.value?.slug || '').trim();
+  if (!raw) return '';
+  const normalized = raw.toLowerCase().replace(/[^a-z0-9-]/g, '');
+  if (!normalized) return '';
+  return `/b/${encodeURIComponent(normalized)}`;
+});
+
+function openPublicCard() {
+  const path = cardPublicHref.value;
+  if (!path) return;
+  const url = router.resolve({ path }).href;
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
 function hasContacts(data) {
   return !!(data?.email || data?.website || (data?.phones && data.phones.length));
 }
@@ -293,20 +340,6 @@ function normalizeOrders() {
   if (!selectedSectionId.value && sections.value.length) {
     selectedSectionId.value = sections.value[0].id;
   }
-}
-
-function moveUp(idx) {
-  const next = [...sections.value];
-  [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
-  sections.value = next;
-  normalizeOrders();
-}
-
-function moveDown(idx) {
-  const next = [...sections.value];
-  [next[idx + 1], next[idx]] = [next[idx], next[idx + 1]];
-  sections.value = next;
-  normalizeOrders();
 }
 
 function syncPhones() {
@@ -462,15 +495,45 @@ watch(
   flex: 1;
   min-width: 0;
 }
+.header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
 .header-titles h1 {
-  margin: 0 0 0.35rem 0;
+  margin: 0;
   word-break: break-word;
 }
-.subtitle {
-  margin: 0;
+.help-icon-btn {
+  flex-shrink: 0;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  border: 1px solid #c5c5c5;
+  background: #fff;
   color: #666;
-  font-size: 0.95rem;
-  max-width: 36rem;
+  cursor: help;
+  padding: 0;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.help-icon-btn:hover,
+.help-icon-btn:focus-visible {
+  outline: none;
+  border-color: #667eea;
+  color: #667eea;
+  background: #f3f4fd;
+}
+.help-icon-q {
+  font-size: 0.82rem;
+  font-weight: 700;
+  position: relative;
+  top: 0.02em;
 }
 .header-actions {
   display: flex;
@@ -483,30 +546,16 @@ watch(
 .header-save {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
   justify-content: flex-end;
 }
-.mode-toggle {
-  display: flex;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid #ddd;
-}
-.mode-btn {
-  padding: 0.45rem 0.85rem;
-  border: none;
-  background: #fff;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-.mode-btn.active {
-  background: #667eea;
-  color: #fff;
+.header-save .save-message {
+  margin-left: 0.25rem;
 }
 .builder-layout {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: minmax(220px, 270px) minmax(0, 1fr) minmax(0, 1fr);
   gap: 1rem;
   align-items: start;
 }
@@ -517,6 +566,56 @@ watch(
   border-radius: 12px;
   padding: 1rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  min-height: 120px;
+  max-height: min(72vh, 880px);
+  overflow-y: auto;
+}
+.sections-panel h3,
+.editor-panel h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.05rem;
+}
+.panel-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+.sections-panel .panel-title-row h3 {
+  margin: 0;
+}
+.open-public-card-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid #c5c5c5;
+  border-radius: 8px;
+  background: #fff;
+  color: #555;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.open-public-card-btn:hover:not(:disabled) {
+  border-color: #667eea;
+  color: #667eea;
+  background: #f3f4fd;
+}
+.open-public-card-btn:focus-visible {
+  outline: none;
+  border-color: #667eea;
+  color: #667eea;
+  background: #f3f4fd;
+}
+.open-public-card-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.open-public-card-icon {
+  display: block;
 }
 .hint {
   font-size: 0.82rem;
@@ -558,24 +657,18 @@ watch(
 .section-item.disabled {
   opacity: 0.65;
 }
-.section-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.5rem;
-}
 .enabled-toggle {
   display: flex;
   align-items: center;
   gap: 0.45rem;
+  min-width: 0;
+}
+.section-enabled-cb {
+  flex-shrink: 0;
   cursor: pointer;
 }
 .section-title {
   font-weight: 600;
-}
-.row-actions {
-  display: flex;
-  gap: 0.25rem;
 }
 .btn {
   border: 0;
@@ -691,5 +784,17 @@ watch(
   height: 90px;
   object-fit: cover;
   border-radius: 6px;
+}
+
+@media (max-width: 1024px) {
+  .builder-layout {
+    grid-template-columns: 1fr;
+    max-height: none;
+  }
+  .sections-panel,
+  .editor-panel,
+  .preview-panel {
+    max-height: none;
+  }
 }
 </style>
