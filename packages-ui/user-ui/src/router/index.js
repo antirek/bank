@@ -17,10 +17,12 @@ const routes = [
   },
   // Старые URL → /my/...
   { path: '/profile', redirect: '/my/profile' },
+  { path: '/profile/edit', redirect: '/my/profile/edit' },
   { path: '/feed', redirect: '/my/feed' },
   { path: '/my-dialogs', redirect: '/my/dialogs' },
-  { path: '/my-subscriptions', redirect: '/my/subscriptions' },
-  { path: '/my-businesses', redirect: '/my/businesses' },
+  { path: '/my-subscriptions', redirect: '/my/profile/subscriptions' },
+  { path: '/my/subscriptions', redirect: '/my/profile/subscriptions' },
+  { path: '/my/businesses', redirect: '/my/profile/businesses' },
   { path: '/create-business', redirect: '/my/create-business' },
   {
     path: '/dialogs/:dialogId',
@@ -52,18 +54,6 @@ const routes = [
     meta: { requiresAuth: true, cardBuilderMode: 'create' }
   },
   {
-    path: '/my/businesses',
-    name: 'MyBusinesses',
-    component: () => import('../views/MyBusinesses.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/my/subscriptions',
-    name: 'MySubscriptions',
-    component: () => import('../views/MySubscriptions.vue'),
-    meta: { requiresAuth: true }
-  },
-  {
     path: '/my/feed',
     name: 'NewsFeed',
     component: () => import('../views/NewsFeed.vue'),
@@ -84,10 +74,35 @@ const routes = [
     redirect: (to) => ({ path: `/b/${to.params.slug}`, replace: true })
   },
   {
-    path: '/my/profile',
-    name: 'Profile',
-    component: () => import('../views/Profile.vue'),
+    path: '/my/profile/edit',
+    name: 'ProfileEdit',
+    component: () => import('../views/ProfileEdit.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/my/profile',
+    component: () => import('../views/ProfileLayout.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        name: 'ProfileHome',
+        component: () => import('../views/Profile.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'subscriptions',
+        name: 'ProfileSubscriptions',
+        component: () => import('../views/MySubscriptions.vue'),
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'businesses',
+        name: 'ProfileBusinesses',
+        component: () => import('../views/MyBusinesses.vue'),
+        meta: { requiresAuth: true }
+      }
+    ]
   },
   {
     path: '/my/dialogs',

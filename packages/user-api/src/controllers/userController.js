@@ -64,9 +64,13 @@ export const updateUser = async (req, res) => {
       return res.status(403).json({ error: 'Access denied. You can only update your own profile' });
     }
 
+    const update = { updatedAt: new Date() };
+    if (name !== undefined) update.name = name;
+    if (avatar !== undefined) update.avatar = avatar;
+
     const user = await User.findOneAndUpdate(
       { userId },
-      { name, avatar, updatedAt: new Date() },
+      update,
       { new: true, runValidators: true }
     );
 

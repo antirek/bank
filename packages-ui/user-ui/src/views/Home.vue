@@ -15,10 +15,10 @@
     </header>
     <main class="main">
       <div v-if="authStore.isAuthenticated" class="actions">
-        <router-link to="/my/businesses" class="btn-create">
+        <router-link to="/my/profile/businesses" class="btn-create">
           Мои бизнесы
         </router-link>
-        <router-link to="/my/subscriptions" class="btn-create">
+        <router-link to="/my/profile/subscriptions" class="btn-create">
           Мои подписки
         </router-link>
         <router-link to="/my/create-business" class="btn-create">

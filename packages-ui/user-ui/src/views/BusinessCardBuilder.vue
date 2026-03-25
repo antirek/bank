@@ -27,7 +27,7 @@
               Предпросмотр
             </button>
           </div>
-          <router-link to="/my/businesses" class="btn btn-secondary">К моим бизнесам</router-link>
+          <router-link to="/my/profile/businesses" class="btn btn-secondary">К моим бизнесам</router-link>
         </div>
       </div>
 

@@ -19,7 +19,7 @@
         <router-link to="/catalog" class="btn btn-primary">
           Перейти в каталог
         </router-link>
-        <router-link to="/my/subscriptions" class="btn btn-secondary">
+        <router-link to="/my/profile/subscriptions" class="btn btn-secondary">
           Мои подписки
         </router-link>
       </div>

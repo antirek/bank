@@ -2,7 +2,7 @@
   <div class="business-dialogs-page">
     <div class="container">
       <div class="header">
-        <router-link to="/my/businesses" class="back-link">← Назад к бизнесам</router-link>
+        <router-link to="/my/profile/businesses" class="back-link">← Назад к бизнесам</router-link>
         <h1>Диалоги: {{ businessName }}</h1>
         <input
           v-model="searchQuery"
