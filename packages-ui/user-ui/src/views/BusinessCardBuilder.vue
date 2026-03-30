@@ -62,7 +62,44 @@
 
       <div v-if="loading" class="loading">Загрузка...</div>
       <div v-else-if="error" class="error-message">{{ error }}</div>
-      <div v-else class="builder-layout">
+      <div v-else>
+        <div v-if="embedIframeSnippet" class="embed-snippet-panel">
+          <h3 class="embed-snippet-title">Код embed-iframe</h3>
+          <p class="embed-snippet-hint">
+            Готовый фрейм 600×720 на странице. В CSP достаточно разрешить <code>frame-src</code> для этого домена.
+          </p>
+          <textarea
+            class="embed-snippet-textarea"
+            readonly
+            rows="8"
+            :value="embedIframeSnippet"
+            aria-label="HTML-код embed-iframe"
+          />
+          <div class="embed-snippet-actions">
+            <button type="button" class="btn btn-secondary btn-small" @click="copyEmbedIframe">
+              {{ embedCopyKind === 'iframe' ? 'Скопировано' : 'Копировать' }}
+            </button>
+          </div>
+        </div>
+        <div v-if="embedCodeSnippet" class="embed-snippet-panel">
+          <h3 class="embed-snippet-title">Код embed-code</h3>
+          <p class="embed-snippet-hint">
+            Кнопка «Чат» справа внизу и панель с чатом. В CSP укажите <code>script-src</code> и <code>frame-src</code> для этого домена.
+          </p>
+          <textarea
+            class="embed-snippet-textarea"
+            readonly
+            rows="6"
+            :value="embedCodeSnippet"
+            aria-label="HTML-код embed-code"
+          />
+          <div class="embed-snippet-actions">
+            <button type="button" class="btn btn-secondary btn-small" @click="copyEmbedCodeBuilder">
+              {{ embedCopyKind === 'code' ? 'Скопировано' : 'Копировать' }}
+            </button>
+          </div>
+        </div>
+        <div class="builder-layout">
         <div class="sections-panel">
           <div class="panel-title-row">
             <h3>Секции карточки</h3>
@@ -241,6 +278,7 @@
             </template>
           </div>
         </div>
+        </div>
       </div>
     </div>
   </div>
@@ -362,6 +400,60 @@ const cardPublicHref = computed(() => {
   if (!normalized) return '';
   return `/b/${encodeURIComponent(normalized)}`;
 });
+
+const embedIframeSnippet = computed(() => {
+  if (typeof window === 'undefined') return '';
+  const raw = String(previewHero.value?.slug || '').trim();
+  if (!raw) return '';
+  const normalized = raw.toLowerCase().replace(/[^a-z0-9-]/g, '');
+  if (!normalized) return '';
+  const src = `${window.location.origin}/embed/b/${encodeURIComponent(normalized)}`;
+  return `<iframe\n  src="${src}"\n  title="Чат с бизнесом"\n  width="600"\n  height="720"\n  loading="lazy"\n  referrerpolicy="strict-origin-when-cross-origin"\n></iframe>`;
+});
+
+const embedCodeSnippet = computed(() => {
+  if (typeof window === 'undefined') return '';
+  const raw = String(previewHero.value?.slug || '').trim();
+  if (!raw) return '';
+  const normalized = raw.toLowerCase().replace(/[^a-z0-9-]/g, '');
+  if (!normalized) return '';
+  const scriptSrc = `${window.location.origin}/boqq-widget.js`;
+  return `<script\n  src="${scriptSrc}"\n  data-boqq-slug="${normalized}"\n  async\n><\/script>`;
+});
+
+const embedCopyKind = ref('');
+let embedCopyTimer = null;
+
+function scheduleEmbedCopyReset() {
+  if (embedCopyTimer) clearTimeout(embedCopyTimer);
+  embedCopyTimer = setTimeout(() => {
+    embedCopyKind.value = '';
+  }, 2000);
+}
+
+async function copyEmbedIframe() {
+  const text = embedIframeSnippet.value;
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    embedCopyKind.value = 'iframe';
+    scheduleEmbedCopyReset();
+  } catch {
+    /* ignore */
+  }
+}
+
+async function copyEmbedCodeBuilder() {
+  const text = embedCodeSnippet.value;
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    embedCopyKind.value = 'code';
+    scheduleEmbedCopyReset();
+  } catch {
+    /* ignore */
+  }
+}
 
 function openPublicCard() {
   const path = cardPublicHref.value;
@@ -518,6 +610,47 @@ watch(
 .container {
   max-width: 100%;
   margin: 0;
+}
+
+.embed-snippet-panel {
+  margin-bottom: 1rem;
+  padding: 1rem 1.1rem;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+.embed-snippet-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.05rem;
+}
+.embed-snippet-hint {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.88rem;
+  color: #555;
+  line-height: 1.45;
+}
+.embed-snippet-hint code {
+  font-size: 0.85em;
+  background: #f0f0f0;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+.embed-snippet-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+  padding: 0.65rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  resize: vertical;
+  margin-bottom: 0.5rem;
+}
+.embed-snippet-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .builder-breadcrumb {

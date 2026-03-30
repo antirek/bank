@@ -1,18 +1,21 @@
 <template>
   <div id="app">
-    <UserHeader />
-    <main class="app-main">
+    <UserHeader v-if="!hideChrome" />
+    <main class="app-main" :class="{ 'app-main--embed': hideChrome }">
       <router-view />
     </main>
   </div>
 </template>
 
 <script setup>
-import { provide } from 'vue';
+import { provide, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import { UserHeader } from '@boqq/ui';
 
 const authStore = useAuthStore();
+const route = useRoute();
+const hideChrome = computed(() => Boolean(route.meta.hideChrome));
 provide('authStore', authStore);
 </script>
 
@@ -50,5 +53,12 @@ body {
   #app {
     --app-content-padding-x: 1rem;
   }
+}
+
+.app-main--embed {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
 }
 </style>

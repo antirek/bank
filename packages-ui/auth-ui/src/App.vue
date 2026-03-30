@@ -77,6 +77,36 @@ const error = ref('');
 
 const userUiUrl = (import.meta.env.VITE_USER_UI_URL || (import.meta.env.DEV ? 'http://localhost:5173' : '')).replace(/\/$/, '');
 
+function buildPostLoginUrl(token) {
+  const base = userUiUrl || '';
+  if (!base) {
+    return '';
+  }
+  const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+  const rawReturn = params.get('return');
+  if (!rawReturn) {
+    return `${base}/#token=${encodeURIComponent(token)}`;
+  }
+  let decoded;
+  try {
+    decoded = decodeURIComponent(rawReturn);
+  } catch {
+    return `${base}/#token=${encodeURIComponent(token)}`;
+  }
+  try {
+    const allowedBase = `${base.replace(/\/$/, '')}/`;
+    const u = /^https?:\/\//i.test(decoded)
+      ? new URL(decoded)
+      : new URL(decoded.replace(/^\//, '/'), allowedBase);
+    if (u.origin !== new URL(allowedBase).origin) {
+      return `${base}/#token=${encodeURIComponent(token)}`;
+    }
+    return `${base.replace(/\/$/, '')}${u.pathname}${u.search}#token=${encodeURIComponent(token)}`;
+  } catch {
+    return `${base}/#token=${encodeURIComponent(token)}`;
+  }
+}
+
 const handleSubmit = async () => {
   error.value = '';
   loading.value = true;
@@ -94,7 +124,7 @@ const handleSubmit = async () => {
         error.value = 'Не получен токен или не задан VITE_USER_UI_URL';
         return;
       }
-      window.location.href = `${userUiUrl}#token=${encodeURIComponent(token)}`;
+      window.location.href = buildPostLoginUrl(token);
       return;
     }
   } catch (err) {

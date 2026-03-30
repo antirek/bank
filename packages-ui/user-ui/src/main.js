@@ -47,7 +47,13 @@ api.interceptors.response.use(
           message.includes('malformed'));
       if (invalidJwt) {
         useAuthStore().logout();
-        window.location.href = authUiUrl;
+        const path = window.location.pathname + window.location.search;
+        if (path.startsWith('/embed/')) {
+          const ret = encodeURIComponent(window.location.origin + path);
+          window.location.href = `${authUiUrl}?return=${ret}`;
+        } else {
+          window.location.href = authUiUrl;
+        }
       }
     }
     return Promise.reject(error);

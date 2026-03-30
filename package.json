@@ -10,12 +10,14 @@
     "packages-shared"
   ],
   "scripts": {
-    "dev": "concurrently -n be,fe -c blue,green \"npm run start:user-api\" \"npm run dev:user-ui\"",
-    "dev:all": "concurrently -n user-api,user-ui,auth-api,auth-ui -c blue,green,yellow,magenta \"npm run dev:user-api\" \"npm run dev:user-ui\" \"npm run dev:auth-api\" \"npm run dev:auth-ui\"",
+    "dev": "concurrently -n be,fe -c blue,green \"npm run start:user-api\" \"npm run dev:user-ui:wait-api\"",
+    "dev:all": "concurrently -n user-api,user-ui,auth-api,auth-ui -c blue,green,yellow,magenta \"npm run dev:user-api\" \"npm run dev:user-ui:wait-api\" \"npm run dev:auth-api\" \"npm run dev:auth-ui:wait-api\"",
     "dev:user-api": "npm run dev -w @boqq/user-api",
     "dev:user-ui": "npm run dev -w @boqq/user-ui",
+    "dev:user-ui:wait-api": "wait-on tcp:127.0.0.1:3101 && npm run dev -w @boqq/user-ui",
     "dev:auth-api": "npm run dev -w @boqq/auth-api",
     "dev:auth-ui": "npm run dev -w @boqq/auth-ui",
+    "dev:auth-ui:wait-api": "wait-on tcp:127.0.0.1:3102 && npm run dev -w @boqq/auth-ui",
     "start:user-api": "npm start -w @boqq/user-api",
     "start:auth-api": "npm start -w @boqq/auth-api",
     "build:ui": "npm run build:user-ui && npm run build:auth-ui",
@@ -26,7 +28,8 @@
     "install:all": "npm install"
   },
   "devDependencies": {
-    "concurrently": "^9.1.0"
+    "concurrently": "^9.1.0",
+    "wait-on": "^8.0.1"
   },
   "keywords": [],
   "author": "",

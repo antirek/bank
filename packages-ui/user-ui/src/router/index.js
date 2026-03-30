@@ -86,6 +86,12 @@ const routes = [
     component: () => import('../views/BusinessPage.vue')
   },
   {
+    path: '/embed/b/:slug',
+    name: 'BusinessEmbed',
+    component: () => import('../views/BusinessEmbedPage.vue'),
+    meta: { hideChrome: true }
+  },
+  {
     path: '/business/:slug',
     redirect: (to) => ({ path: `/b/${to.params.slug}`, replace: true })
   },

@@ -84,6 +84,33 @@
             <p v-else class="description empty">Нет описания</p>
           </div>
 
+          <div v-if="hasEmbedSlug(business)" class="embed-copy-row">
+            <button
+              type="button"
+              class="btn-embed-copy"
+              title="embed-iframe: готовый фрейм 600×720"
+              @click="copyEmbedIframe(business)"
+            >
+              {{
+                embedCopiedKey === businessKey(business, 'iframe')
+                  ? 'Скопировано (iframe)'
+                  : 'Копировать embed-iframe'
+              }}
+            </button>
+            <button
+              type="button"
+              class="btn-embed-copy btn-embed-copy--secondary"
+              title="embed-code: кнопка «Чат» и панель; нужны script-src и frame-src в CSP"
+              @click="copyEmbedCodeScript(business)"
+            >
+              {{
+                embedCopiedKey === businessKey(business, 'code')
+                  ? 'Скопировано (код)'
+                  : 'Копировать embed-code'
+              }}
+            </button>
+          </div>
+
           <div class="business-footer">
             <span class="status" :class="{ active: business.isActive }">
               {{ business.isActive ? 'Активен' : 'Неактивен' }}
@@ -107,6 +134,70 @@ const authStore = useAuthStore();
 const businesses = ref([]);
 const loading = ref(true);
 const error = ref('');
+/** `${businessId}:iframe` | `${businessId}:code` | '' */
+const embedCopiedKey = ref('');
+let embedCopyTimer = null;
+
+function businessKey(business, kind) {
+  return `${business.businessId}:${kind}`;
+}
+
+function normalizeSlug(slug) {
+  const raw = String(slug || '').trim();
+  if (!raw) return '';
+  return raw.toLowerCase().replace(/[^a-z0-9-]/g, '');
+}
+
+function hasEmbedSlug(business) {
+  return !!normalizeSlug(business?.slug);
+}
+
+function embedIframeHtml(business) {
+  if (typeof window === 'undefined') return '';
+  const normalized = normalizeSlug(business?.slug);
+  if (!normalized) return '';
+  const src = `${window.location.origin}/embed/b/${encodeURIComponent(normalized)}`;
+  return `<iframe\n  src="${src}"\n  title="Чат с бизнесом"\n  width="600"\n  height="720"\n  loading="lazy"\n  referrerpolicy="strict-origin-when-cross-origin"\n></iframe>`;
+}
+
+function embedCodeScriptHtml(business) {
+  if (typeof window === 'undefined') return '';
+  const normalized = normalizeSlug(business?.slug);
+  if (!normalized) return '';
+  const scriptSrc = `${window.location.origin}/boqq-widget.js`;
+  return `<script\n  src="${scriptSrc}"\n  data-boqq-slug="${normalized}"\n  async\n><\/script>`;
+}
+
+function scheduleEmbedKeyReset() {
+  if (embedCopyTimer) clearTimeout(embedCopyTimer);
+  embedCopyTimer = setTimeout(() => {
+    embedCopiedKey.value = '';
+  }, 2000);
+}
+
+async function copyEmbedIframe(business) {
+  const text = embedIframeHtml(business);
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    embedCopiedKey.value = businessKey(business, 'iframe');
+    scheduleEmbedKeyReset();
+  } catch {
+    /* ignore */
+  }
+}
+
+async function copyEmbedCodeScript(business) {
+  const text = embedCodeScriptHtml(business);
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    embedCopiedKey.value = businessKey(business, 'code');
+    scheduleEmbedKeyReset();
+  } catch {
+    /* ignore */
+  }
+}
 
 const loadBusinesses = async () => {
   loading.value = true;
@@ -356,5 +447,43 @@ onMounted(() => {
 
 .public-status {
   color: #999;
+}
+
+.embed-copy-row {
+  margin-bottom: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.btn-embed-copy {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4a5568;
+  background: #f0f4ff;
+  border: 1px solid #c5d0f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.btn-embed-copy:hover {
+  background: #e4eaff;
+  border-color: #667eea;
+  color: #3d4a94;
+}
+
+.btn-embed-copy--secondary {
+  background: #f5f5f5;
+  border-color: #d0d0d0;
+  color: #555;
+}
+
+.btn-embed-copy--secondary:hover {
+  background: #ebebeb;
+  border-color: #999;
+  color: #333;
 }
 </style>
