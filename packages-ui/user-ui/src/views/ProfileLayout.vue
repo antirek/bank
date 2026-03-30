@@ -71,10 +71,7 @@ const isBusinessesSubnavActive = computed(() => {
 });
 
 /** Чаты владельца бизнеса */
-const isBusinessChatsSubnavActive = computed(() => {
-  const p = route.path;
-  return p === '/my/profile/business-chats' || p.startsWith('/my/businesses/');
-});
+const isBusinessChatsSubnavActive = computed(() => route.path === '/my/profile/business-chats');
 
 const isBusinessSection = computed(() => isBusinessesSubnavActive.value || isBusinessChatsSubnavActive.value);
 </script>

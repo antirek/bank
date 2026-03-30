@@ -31,7 +31,7 @@
             <div class="header-actions">
               <router-link
                 v-if="authStore.isAuthenticated && isOwner"
-                :to="`/my/businesses/${business.businessId}/dialogs`"
+                :to="{ path: '/my/profile/business-chats', query: { business: business.businessId } }"
                 class="btn btn-primary btn-icon-header"
                 title="Обращения"
                 aria-label="Обращения"

@@ -33,7 +33,7 @@
             <h3>{{ business.name }}</h3>
             <div class="business-actions">
               <router-link
-                :to="`/my/businesses/${business.businessId}/dialogs`"
+                :to="{ path: '/my/profile/business-chats', query: { business: business.businessId } }"
                 class="btn-icon dialogs-link"
                 title="Диалоги"
               >

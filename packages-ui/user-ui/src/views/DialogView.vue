@@ -1,9 +1,9 @@
 <template>
-  <div class="dialog-view">
+  <div class="dialog-view" :class="{ 'dialog-view--embedded': embedded }">
     <div class="dialog-container">
       <!-- Заголовок -->
       <div class="dialog-header">
-        <router-link :to="computedBackUrl" class="back-button">← Назад</router-link>
+        <router-link v-if="!embedded" :to="computedBackUrl" class="back-button">← Назад</router-link>
         <h2>{{ dialogInfo.title }}</h2>
       </div>
 
@@ -75,6 +75,10 @@ const props = defineProps({
   backUrl: {
     type: String,
     default: null
+  },
+  embedded: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -293,6 +297,13 @@ watch(() => props.dialogId, async (newId) => {
   flex-direction: column;
 }
 
+.dialog-view--embedded {
+  min-height: 0;
+  height: 100%;
+  flex: 1;
+  background: transparent;
+}
+
 .dialog-container {
   max-width: 800px;
   margin: 0 auto;
@@ -305,6 +316,14 @@ watch(() => props.dialogId, async (newId) => {
   overflow: hidden; /* Предотвращаем переполнение */
 }
 
+.dialog-view--embedded .dialog-container {
+  max-width: none;
+  margin: 0;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+}
+
 .dialog-header {
   padding: 1rem;
   border-bottom: 1px solid #e0e0e0;
@@ -315,6 +334,14 @@ watch(() => props.dialogId, async (newId) => {
   position: sticky;
   top: 0;
   z-index: 10;
+}
+
+.dialog-view--embedded .dialog-header {
+  padding: 0.65rem 0.85rem;
+}
+
+.dialog-view--embedded .dialog-header h2 {
+  font-size: 1.05rem;
 }
 
 .back-button {
@@ -340,6 +367,12 @@ watch(() => props.dialogId, async (newId) => {
   padding: 1rem;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+}
+
+.dialog-view--embedded .messages-container {
+  flex: 1 1 0;
+  min-height: 0;
 }
 
 .loading-messages,

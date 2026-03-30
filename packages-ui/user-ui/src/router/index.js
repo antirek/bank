@@ -35,7 +35,11 @@ const routes = [
   },
   {
     path: '/my-businesses/:businessId/dialogs',
-    redirect: (to) => ({ path: `/my/businesses/${to.params.businessId}/dialogs`, replace: true })
+    redirect: (to) => ({
+      path: '/my/profile/business-chats',
+      query: { business: to.params.businessId },
+      replace: true
+    })
   },
   {
     path: '/my-businesses/:businessId/card-builder',
@@ -54,7 +58,8 @@ const routes = [
   {
     path: '/my-businesses/:businessId/dialogs/:dialogId',
     redirect: (to) => ({
-      path: `/my/businesses/${to.params.businessId}/dialogs/${to.params.dialogId}`,
+      path: '/my/profile/business-chats',
+      query: { business: to.params.businessId, dialog: to.params.dialogId },
       replace: true
     })
   },
@@ -142,18 +147,18 @@ const routes = [
   },
   {
     path: '/my/businesses/:businessId/dialogs',
-    name: 'BusinessDialogs',
-    component: () => import('../views/BusinessDialogs.vue'),
-    meta: { requiresAuth: true }
+    redirect: (to) => ({
+      path: '/my/profile/business-chats',
+      query: { business: to.params.businessId },
+      replace: true
+    })
   },
   {
     path: '/my/businesses/:businessId/dialogs/:dialogId',
-    name: 'BusinessDialogView',
-    component: () => import('../views/DialogView.vue'),
-    meta: { requiresAuth: true },
-    props: (route) => ({
-      dialogId: route.params.dialogId,
-      backUrl: `/my/businesses/${route.params.businessId}/dialogs`
+    redirect: (to) => ({
+      path: '/my/profile/business-chats',
+      query: { business: to.params.businessId, dialog: to.params.dialogId },
+      replace: true
     })
   },
   {
