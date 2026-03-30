@@ -49,18 +49,35 @@
               >
                 ✏️
               </router-link>
+              <a
+                v-if="business.slug"
+                :href="`/b/${business.slug}`"
+                class="btn-icon btn-icon-svg"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Публичная карточка (новая вкладка)"
+                aria-label="Открыть публичную карточку в новой вкладке"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+              </a>
             </div>
           </div>
           
           <div class="business-info">
             <p class="slug">/b/{{ business.slug }}</p>
-            <router-link
-              v-if="business.slug"
-              :to="`/b/${business.slug}`"
-              class="business-page-link"
-            >
-              Открыть публичную карточку →
-            </router-link>
             <p v-if="business.description" class="description">
               {{ business.description }}
             </p>
@@ -262,18 +279,36 @@ onMounted(() => {
 }
 
 .btn-icon {
-  padding: 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
   background: #f5f5f5;
   border: none;
   border-radius: 6px;
   cursor: pointer;
   text-decoration: none;
-  font-size: 1.2rem;
+  font-size: 1rem;
+  line-height: 1;
   transition: background 0.2s;
+}
+
+.btn-icon svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  display: block;
 }
 
 .btn-icon:hover {
   background: #e0e0e0;
+}
+
+.btn-icon-svg {
+  color: #555;
 }
 
 .business-info {
@@ -285,18 +320,6 @@ onMounted(() => {
   font-weight: 600;
   margin: 0 0 0.5rem 0;
   font-family: monospace;
-}
-
-.business-page-link {
-  display: inline-block;
-  margin-bottom: 0.5rem;
-  color: #5c6bc0;
-  font-size: 0.9rem;
-  text-decoration: none;
-}
-
-.business-page-link:hover {
-  text-decoration: underline;
 }
 
 .description {

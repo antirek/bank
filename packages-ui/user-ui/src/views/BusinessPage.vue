@@ -29,6 +29,35 @@
               </div>
             </div>
             <div class="header-actions">
+              <button
+                v-if="sharePageUrl"
+                type="button"
+                class="btn btn-secondary btn-icon-header"
+                title="QR-код со ссылкой на эту страницу"
+                aria-label="Показать QR-код со ссылкой на карточку бизнеса"
+                @click="openQrModal"
+              >
+                <span class="action-icon action-icon--svg" aria-hidden="true">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke-width="1.5"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z"
+                    />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75zM16.5 19.5h.75v.75h-.75v-.75z"
+                    />
+                  </svg>
+                </span>
+              </button>
               <router-link
                 v-if="authStore.isAuthenticated && isOwner"
                 :to="{ path: '/my/profile/business-chats', query: { business: business.businessId } }"
@@ -223,11 +252,53 @@
         </div>
       </div>
     </div>
+
+    <Teleport to="body">
+      <div
+        v-if="showQrModal"
+        class="qr-modal-backdrop"
+        role="presentation"
+        @click.self="closeQrModal"
+      >
+        <div
+          class="qr-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="qr-modal-title"
+          @click.stop
+        >
+          <button
+            type="button"
+            class="qr-modal-close"
+            aria-label="Закрыть"
+            @click="closeQrModal"
+          >
+            ×
+          </button>
+          <h2 id="qr-modal-title" class="qr-modal-title">Ссылка на карточку</h2>
+          <p class="qr-modal-hint">Отсканируйте QR-код, чтобы открыть эту страницу на телефоне.</p>
+          <a v-if="sharePageUrl" :href="sharePageUrl" class="qr-modal-url" @click.stop>{{ sharePageUrl }}</a>
+          <div class="qr-modal-image-wrap">
+            <img
+              v-if="qrDataUrl"
+              :src="qrDataUrl"
+              width="220"
+              height="220"
+              class="qr-modal-image"
+              alt="QR-код со ссылкой на страницу бизнеса"
+            />
+            <p v-else-if="qrError" class="qr-modal-error">{{ qrError }}</p>
+            <p v-else class="qr-modal-loading">Генерация…</p>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import QRCode from 'qrcode';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import api from '@boqq/api-client';
@@ -252,6 +323,55 @@ const newNews = ref({
   title: '',
   content: ''
 });
+
+const showQrModal = ref(false);
+const qrDataUrl = ref('');
+const qrError = ref('');
+
+const sharePageUrl = computed(() => {
+  if (!business.value?.slug || typeof window === 'undefined') {
+    return '';
+  }
+  return new URL(`/b/${business.value.slug}`, window.location.origin).href;
+});
+
+function onQrModalEscape(e) {
+  if (e.key === 'Escape' && showQrModal.value) {
+    closeQrModal();
+  }
+}
+
+watch(showQrModal, (open) => {
+  if (open) {
+    document.addEventListener('keydown', onQrModalEscape);
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.removeEventListener('keydown', onQrModalEscape);
+    document.body.style.overflow = '';
+  }
+});
+
+async function openQrModal() {
+  if (!sharePageUrl.value) {
+    return;
+  }
+  qrError.value = '';
+  qrDataUrl.value = '';
+  showQrModal.value = true;
+  try {
+    qrDataUrl.value = await QRCode.toDataURL(sharePageUrl.value, {
+      width: 220,
+      margin: 2,
+      color: { dark: '#1a1a1a', light: '#ffffff' }
+    });
+  } catch {
+    qrError.value = 'Не удалось создать QR-код';
+  }
+}
+
+function closeQrModal() {
+  showQrModal.value = false;
+}
 const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 const dayNames = { mon: 'Пн', tue: 'Вт', wed: 'Ср', thu: 'Чт', fri: 'Пт', sat: 'Сб', sun: 'Вс' };
 
@@ -486,6 +606,11 @@ const formatDate = (dateString) => {
 
 onMounted(() => {
   loadBusiness();
+});
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', onQrModalEscape);
+  document.body.style.overflow = '';
 });
 </script>
 
@@ -730,6 +855,17 @@ onMounted(() => {
   font-size: 1.05rem;
 }
 
+.action-icon--svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.action-icon--svg svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
 .subscribed-icon-badge {
   box-sizing: border-box;
   display: inline-flex;
@@ -939,5 +1075,97 @@ onMounted(() => {
   line-height: 1.6;
   margin: 0;
   white-space: pre-wrap;
+}
+
+.qr-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.qr-modal {
+  position: relative;
+  max-width: 22rem;
+  width: 100%;
+  padding: 1.5rem 1.25rem 1.75rem;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+.qr-modal-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.6rem;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  background: transparent;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: #666;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.qr-modal-close:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.qr-modal-title {
+  margin: 0 2rem 0.5rem 0;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.qr-modal-hint {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.45;
+}
+
+.qr-modal-url {
+  display: block;
+  margin-bottom: 1rem;
+  font-size: 0.8rem;
+  word-break: break-all;
+  color: #667eea;
+  text-decoration: none;
+}
+
+.qr-modal-url:hover {
+  text-decoration: underline;
+}
+
+.qr-modal-image-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 220px;
+  justify-content: center;
+}
+
+.qr-modal-image {
+  display: block;
+  border-radius: 8px;
+  border: 1px solid #e8e8e8;
+}
+
+.qr-modal-loading,
+.qr-modal-error {
+  margin: 0;
+  color: #888;
+  font-size: 0.95rem;
+}
+
+.qr-modal-error {
+  color: #c62828;
 }
 </style>
