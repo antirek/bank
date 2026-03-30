@@ -466,7 +466,11 @@ function closeQrModal() {
 const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 const dayNames = { mon: 'Пн', tue: 'Вт', wed: 'Ср', thu: 'Чт', fri: 'Пт', sat: 'Сб', sun: 'Вс' };
 
-const HALF_WIDTH_SECTION_TYPES = new Set(['contacts', 'working_hours']);
+/** Две пары блоков по 50 % ширины на широком экране (если обе секции пары видны). */
+const HALF_PAIRS = [
+  ['address', 'messengers'],
+  ['contacts', 'working_hours']
+];
 
 // Проверяем, является ли текущий пользователь владельцем бизнеса
 const isOwner = computed(() => {
@@ -531,26 +535,34 @@ const renderedSections = computed(() => {
     .sort((a, b) => a.order - b.order);
 });
 
-/** Порядок для сетки: контакты и время работы подряд, чтобы на широкой сетке были в одной строке. */
+/**
+ * Порядок для сетки: каждая пара (адрес+мессенджеры, контакты+время работы) идёт подряд;
+ * порядок пар — как первая секция пары встречается в карточке (по order).
+ */
 const sectionsForDisplay = computed(() => {
   const list = renderedSections.value;
-  const duo = list.filter((s) => HALF_WIDTH_SECTION_TYPES.has(s.type)).sort((a, b) => a.order - b.order);
-  const rest = list.filter((s) => !HALF_WIDTH_SECTION_TYPES.has(s.type));
-  if (duo.length === 0) {
-    return list;
-  }
-  const duoInsertOrder = Math.min(...duo.map((s) => s.order));
+  const sorted = [...list].sort((a, b) => a.order - b.order);
+  const byType = new Map(list.map((s) => [s.type, s]));
+  const used = new Set();
   const out = [];
-  let duoInserted = false;
-  for (const s of rest) {
-    if (!duoInserted && s.order > duoInsertOrder) {
-      out.push(...duo);
-      duoInserted = true;
+  const pairForType = (type) => HALF_PAIRS.find((p) => p.includes(type));
+
+  for (const s of sorted) {
+    if (used.has(s.type)) continue;
+    const pair = pairForType(s.type);
+    if (pair) {
+      const block = pair
+        .map((t) => byType.get(t))
+        .filter(Boolean)
+        .sort((a, b) => a.order - b.order);
+      for (const b of block) {
+        used.add(b.type);
+        out.push(b);
+      }
+    } else {
+      used.add(s.type);
+      out.push(s);
     }
-    out.push(s);
-  }
-  if (!duoInserted) {
-    out.push(...duo);
   }
   return out;
 });
@@ -562,14 +574,15 @@ const infoSectionsForDisplay = computed(() =>
   )
 );
 
-const halfWidthSectionCount = computed(
-  () => renderedSections.value.filter((s) => HALF_WIDTH_SECTION_TYPES.has(s.type)).length
-);
-
 function sectionCardClass(type) {
   const base = 'section-card';
-  const pairHalves = halfWidthSectionCount.value >= 2;
-  if (HALF_WIDTH_SECTION_TYPES.has(type) && pairHalves) {
+  const pair = HALF_PAIRS.find((p) => p.includes(type));
+  if (!pair) {
+    return `${base} section-card--wide`;
+  }
+  const visibleTypes = new Set(infoSectionsForDisplay.value.map((s) => s.type));
+  const bothPresent = pair.every((t) => visibleTypes.has(t));
+  if (bothPresent) {
     return `${base} section-card--half`;
   }
   return `${base} section-card--wide`;
