@@ -23,6 +23,7 @@ const routes = [
   { path: '/my-subscriptions', redirect: '/my/profile/subscriptions' },
   { path: '/my/subscriptions', redirect: '/my/profile/subscriptions' },
   { path: '/my/businesses', redirect: '/my/profile/businesses' },
+  { path: '/my/business-chats', redirect: '/my/profile/business-chats' },
   { path: '/create-business', redirect: '/my/create-business' },
   {
     path: '/dialogs/:dialogId',
@@ -117,6 +118,12 @@ const routes = [
         name: 'BusinessCardBuilder',
         component: () => import('../views/BusinessCardBuilder.vue'),
         meta: { requiresAuth: true, cardBuilderMode: 'edit' }
+      },
+      {
+        path: 'business-chats',
+        name: 'ProfileBusinessChats',
+        component: () => import('../views/MyBusinessChats.vue'),
+        meta: { requiresAuth: true }
       }
     ]
   },
@@ -129,7 +136,7 @@ const routes = [
   {
     path: '/my/dialogs/:dialogId',
     name: 'DialogView',
-    component: () => import('../views/DialogView.vue'),
+    component: () => import('../views/MyDialogs.vue'),
     meta: { requiresAuth: true },
     props: true
   },

@@ -2,36 +2,50 @@
   <div class="profile-layout">
     <div class="container">
       <nav class="profile-subnav" aria-label="Разделы профиля">
-        <router-link v-slot="{ href, navigate, isExactActive }" :to="{ name: 'ProfileHome' }" custom>
-          <a
-            :href="href"
-            class="subnav-link"
-            :class="{ 'router-link-active': isExactActive }"
-            @click="navigate"
-          >
-            Мой профиль
-          </a>
-        </router-link>
-        <router-link v-slot="{ href, navigate, isExactActive }" :to="{ name: 'ProfileSubscriptions' }" custom>
-          <a
-            :href="href"
-            class="subnav-link"
-            :class="{ 'router-link-active': isExactActive }"
-            @click="navigate"
-          >
-            Мои подписки
-          </a>
-        </router-link>
-        <router-link v-slot="{ href, navigate }" :to="{ name: 'ProfileBusinesses' }" custom>
-          <a
-            :href="href"
-            class="subnav-link"
-            :class="{ 'router-link-active': isBusinessesSubnavActive }"
-            @click="navigate"
-          >
-            Мои бизнесы
-          </a>
-        </router-link>
+        <template v-if="isBusinessSection">
+          <router-link v-slot="{ href, navigate }" :to="{ name: 'ProfileBusinesses' }" custom>
+            <a
+              :href="href"
+              class="subnav-link"
+              :class="{ 'router-link-active': isBusinessesSubnavActive }"
+              @click="navigate"
+            >
+              Мои бизнесы
+            </a>
+          </router-link>
+          <router-link v-slot="{ href, navigate }" :to="{ name: 'ProfileBusinessChats' }" custom>
+            <a
+              :href="href"
+              class="subnav-link"
+              :class="{ 'router-link-active': isBusinessChatsSubnavActive }"
+              @click="navigate"
+            >
+              Мои бизнес чаты
+            </a>
+          </router-link>
+        </template>
+        <template v-else>
+          <router-link v-slot="{ href, navigate, isExactActive }" :to="{ name: 'ProfileHome' }" custom>
+            <a
+              :href="href"
+              class="subnav-link"
+              :class="{ 'router-link-active': isExactActive }"
+              @click="navigate"
+            >
+              Мой профиль
+            </a>
+          </router-link>
+          <router-link v-slot="{ href, navigate, isExactActive }" :to="{ name: 'ProfileSubscriptions' }" custom>
+            <a
+              :href="href"
+              class="subnav-link"
+              :class="{ 'router-link-active': isExactActive }"
+              @click="navigate"
+            >
+              Мои подписки
+            </a>
+          </router-link>
+        </template>
       </nav>
       <div class="profile-outlet">
         <router-view />
@@ -55,6 +69,14 @@ const isBusinessesSubnavActive = computed(() => {
     route.name === 'BusinessCardBuilder'
   );
 });
+
+/** Чаты владельца бизнеса */
+const isBusinessChatsSubnavActive = computed(() => {
+  const p = route.path;
+  return p === '/my/profile/business-chats' || p.startsWith('/my/businesses/');
+});
+
+const isBusinessSection = computed(() => isBusinessesSubnavActive.value || isBusinessChatsSubnavActive.value);
 </script>
 
 <style scoped>

@@ -17,6 +17,7 @@
         </nav>
       </div>
       <div class="user-header-right">
+        <router-link to="/my/profile/businesses" class="nav-link">Мои бизнесы</router-link>
         <router-link to="/catalog" class="nav-link">Каталог</router-link>
         <button @click="handleLogout" class="btn-logout-mini" title="Выйти">
           Выйти

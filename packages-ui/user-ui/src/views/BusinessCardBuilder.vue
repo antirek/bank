@@ -108,7 +108,7 @@
             <input v-model="selectedSection.data.slug" type="text" placeholder="my-cafe" />
             <p class="hint">Только строчные буквы, цифры и дефисы</p>
             <label>Описание *</label>
-            <textarea v-model="selectedSection.data.description" rows="4" placeholder="Кратко о бизнесе" />
+            <textarea v-model="selectedSection.data.description" rows="8" placeholder="Кратко о бизнесе" />
             <label>Логотип (URL)</label>
             <input v-model="selectedSection.data.logo" type="url" :placeholder="EXAMPLE_LOGO_URL" />
             <p class="hint">
@@ -128,14 +128,14 @@
 
           <template v-else-if="selectedSection?.type === 'address'">
             <label>Адрес *</label>
-            <textarea v-model="selectedSection.data.address" rows="3" placeholder="Город, улица" />
+            <textarea v-model="selectedSection.data.address" rows="6" placeholder="Город, улица" />
           </template>
 
           <template v-else-if="selectedSection?.type === 'gallery'">
             <label>Фото (URL по одному в строке)</label>
             <textarea
               v-model="galleryText"
-              rows="6"
+              rows="10"
               :placeholder="EXAMPLE_GALLERY_TEXT"
               @input="syncGallery"
             />
