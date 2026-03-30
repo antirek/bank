@@ -1,7 +1,7 @@
 import { Business } from '@boqq/shared/models';
 import mms3Client from '@boqq/shared/api-clients/mms3';
 
-const ALLOWED_SECTION_TYPES = new Set(['hero', 'contacts', 'working_hours', 'address', 'gallery']);
+const ALLOWED_SECTION_TYPES = new Set(['hero', 'contacts', 'messengers', 'working_hours', 'address', 'gallery']);
 const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 
 function requireUser(req, res) {
@@ -27,15 +27,21 @@ function normalizeWorkingHours(workingHours = {}) {
   }, {});
 }
 
+function normalizeMessengersData(m = {}) {
+  return {
+    telegram: String(m.telegram ?? '').trim(),
+    whatsapp: String(m.whatsapp ?? '').trim(),
+    vk: String(m.vk ?? '').trim(),
+    max: String(m.max ?? '').trim()
+  };
+}
+
 function normalizeContacts(contacts = {}) {
   return {
     phones: Array.isArray(contacts.phones) ? contacts.phones.filter(Boolean) : [],
     email: contacts.email || '',
     website: contacts.website || '',
-    messengers: {
-      telegram: contacts.messengers?.telegram || '',
-      whatsapp: contacts.messengers?.whatsapp || ''
-    }
+    messengers: normalizeMessengersData(contacts.messengers || {})
   };
 }
 
@@ -57,12 +63,30 @@ function normalizeLocation(location = {}, address = '') {
 }
 
 function buildDefaultSections(data) {
+  const contacts = data.contacts || normalizeContacts();
   return [
     { id: 'hero', type: 'hero', enabled: true, order: 0, data: { name: data.name || '', slug: data.slug || '', description: data.description || '', logo: data.logo || '' } },
-    { id: 'contacts', type: 'contacts', enabled: true, order: 1, data: data.contacts || normalizeContacts() },
-    { id: 'working_hours', type: 'working_hours', enabled: true, order: 2, data: data.workingHours || normalizeWorkingHours() },
-    { id: 'address', type: 'address', enabled: true, order: 3, data: { address: data.address || '' } },
-    { id: 'gallery', type: 'gallery', enabled: true, order: 4, data: { images: Array.isArray(data.gallery) ? data.gallery : [] } }
+    {
+      id: 'contacts',
+      type: 'contacts',
+      enabled: true,
+      order: 1,
+      data: {
+        phones: contacts.phones,
+        email: contacts.email,
+        website: contacts.website
+      }
+    },
+    {
+      id: 'messengers',
+      type: 'messengers',
+      enabled: true,
+      order: 2,
+      data: normalizeMessengersData(contacts.messengers || {})
+    },
+    { id: 'working_hours', type: 'working_hours', enabled: true, order: 3, data: data.workingHours || normalizeWorkingHours() },
+    { id: 'address', type: 'address', enabled: true, order: 4, data: { address: data.address || '' } },
+    { id: 'gallery', type: 'gallery', enabled: true, order: 5, data: { images: Array.isArray(data.gallery) ? data.gallery : [] } }
   ];
 }
 
@@ -90,6 +114,96 @@ function normalizeSections(sections = []) {
   return normalized.sort((a, b) => a.order - b.order);
 }
 
+/** Числовой order и корректный data, порядок 0..n — безопасная выдача для редактора и публичной карточки. */
+function shapeSectionDataForRead(section) {
+  switch (section.type) {
+    case 'hero':
+      return {
+        ...section,
+        data: {
+          name: String(section.data.name ?? ''),
+          slug: String(section.data.slug ?? ''),
+          description: String(section.data.description ?? ''),
+          logo: String(section.data.logo ?? '')
+        }
+      };
+    case 'contacts': {
+      const d = section.data;
+      return {
+        ...section,
+        data: {
+          phones: Array.isArray(d.phones) ? d.phones.filter(Boolean) : [],
+          email: String(d.email ?? ''),
+          website: String(d.website ?? '')
+        }
+      };
+    }
+    case 'messengers':
+      return { ...section, data: normalizeMessengersData(section.data) };
+    case 'working_hours':
+      return { ...section, data: normalizeWorkingHours(section.data) };
+    case 'address':
+      return { ...section, data: { address: String(section.data.address ?? '') } };
+    case 'gallery':
+      return {
+        ...section,
+        data: { images: Array.isArray(section.data.images) ? section.data.images.filter(Boolean) : [] }
+      };
+    default:
+      return section;
+  }
+}
+
+function sanitizeCardSectionList(sections) {
+  if (!Array.isArray(sections)) return [];
+  const coerced = sections
+    .map((s) => {
+      if (!s || !ALLOWED_SECTION_TYPES.has(s.type)) return null;
+      const order = Number(s.order);
+      const plain =
+        s.data && typeof s.data === 'object' && !Array.isArray(s.data) ? { ...s.data } : {};
+      return {
+        id: s.id || `${s.type}_${Number.isFinite(order) ? order : 0}`,
+        type: s.type,
+        enabled: s.enabled !== false,
+        order: Number.isFinite(order) ? order : 0,
+        data: plain
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.order - b.order || String(a.id).localeCompare(String(b.id)));
+  const reindexed = coerced.map((s, idx) => ({ ...s, order: idx }));
+  return reindexed.map(shapeSectionDataForRead);
+}
+
+/** Восстанавливает полный набор секций (после порчи БД или старых миграций с одной секцией messengers). */
+function mergeCardSectionsWithDefaults(sanitizedSections, business) {
+  const defaults = buildDefaultSections(business);
+  const byType = new Map();
+  for (const s of sanitizedSections || []) {
+    if (s && ALLOWED_SECTION_TYPES.has(s.type)) byType.set(s.type, s);
+  }
+  const merged = defaults.map((def) => {
+    const cur = byType.get(def.type);
+    if (!cur) {
+      return shapeSectionDataForRead({ ...def });
+    }
+    const base =
+      def.data && typeof def.data === 'object' && !Array.isArray(def.data) ? { ...def.data } : {};
+    const extra =
+      cur.data && typeof cur.data === 'object' && !Array.isArray(cur.data) ? { ...cur.data } : {};
+    const rawData = { ...base, ...extra };
+    if (def.type === 'contacts') delete rawData.messengers;
+    return shapeSectionDataForRead({
+      ...def,
+      id: cur.id || def.id,
+      enabled: cur.enabled !== false,
+      data: rawData
+    });
+  });
+  return merged.map((s, idx) => ({ ...s, order: idx }));
+}
+
 function validateRequiredBusinessFields(payload) {
   if (!payload.name?.trim() || !payload.slug?.trim() || !payload.description?.trim() || !payload.address?.trim()) {
     return 'Required fields: name, slug, description, address';
@@ -104,13 +218,22 @@ function extractBusinessFromSections(sections) {
     byType[s.type] = s.data || {};
   }
   const hero = byType.hero || {};
+  const contactsRaw = byType.contacts || {};
+  const messengersRaw = byType.messengers || {};
+  const mergedMessengers = normalizeMessengersData({
+    ...(contactsRaw.messengers || {}),
+    ...messengersRaw
+  });
   return {
     name: (hero.name || '').trim(),
     slug: (hero.slug || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, ''),
     description: (hero.description || '').trim(),
     logo: (hero.logo || '').trim(),
     address: (byType.address?.address || '').trim(),
-    contacts: normalizeContacts(byType.contacts),
+    contacts: normalizeContacts({
+      ...contactsRaw,
+      messengers: mergedMessengers
+    }),
     workingHours: normalizeWorkingHours(byType.working_hours),
     gallery: Array.isArray(byType.gallery?.images) ? byType.gallery.images.filter(Boolean) : []
   };
@@ -150,7 +273,15 @@ export const getBusinessBySlug = async (req, res) => {
     if (!business) {
       return res.status(404).json({ error: 'Business not found' });
     }
-    res.json({ data: business });
+    const payload = business.toObject();
+    if (payload.card?.sections?.length) {
+      const withMessengers = ensureMessengersSectionInCard([...payload.card.sections], payload);
+      payload.card = {
+        ...payload.card,
+        sections: mergeCardSectionsWithDefaults(sanitizeCardSectionList(withMessengers), payload)
+      };
+    }
+    res.json({ data: payload });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -329,13 +460,24 @@ export const updateBusiness = async (req, res) => {
     const normalizedContacts = contacts ? normalizeContacts(contacts) : (business.contacts || normalizeContacts());
     const normalizedWorkingHours = workingHours ? normalizeWorkingHours(workingHours) : (business.workingHours || normalizeWorkingHours());
     const normalizedGallery = Array.isArray(gallery) ? gallery.filter(Boolean) : (business.gallery || []);
+    const normalizedMessengers = normalizeMessengersData(normalizedContacts.messengers || {});
     const sections = business.card?.sections?.length
       ? business.card.sections.map((section) => {
           if (section.type === 'hero') {
             return { ...section, data: { ...section.data, name: nextName, slug: nextSlug, description: nextDescription, logo: logo ?? business.logo ?? '' } };
           }
           if (section.type === 'contacts') {
-            return { ...section, data: normalizedContacts };
+            return {
+              ...section,
+              data: {
+                phones: normalizedContacts.phones,
+                email: normalizedContacts.email,
+                website: normalizedContacts.website
+              }
+            };
+          }
+          if (section.type === 'messengers') {
+            return { ...section, data: normalizedMessengers };
           }
           if (section.type === 'working_hours') {
             return { ...section, data: normalizedWorkingHours };
@@ -386,6 +528,36 @@ export const updateBusiness = async (req, res) => {
   }
 };
 
+function ensureMessengersSectionInCard(sections, business) {
+  if (!Array.isArray(sections) || sections.length === 0) {
+    return sections || [];
+  }
+  if (sections.some((s) => s.type === 'messengers')) {
+    return sections;
+  }
+  const contactsSec = sections.find((s) => s.type === 'contacts');
+  const fromEmbedded =
+    contactsSec?.data?.messengers && typeof contactsSec.data.messengers === 'object'
+      ? contactsSec.data.messengers
+      : {};
+  const fromDoc = business.contacts?.messengers || {};
+  const data = normalizeMessengersData({ ...fromDoc, ...fromEmbedded });
+  const bumped = sections.map((s) => {
+    const o = Number(s.order);
+    const ord = Number.isFinite(o) ? o : 0;
+    return {
+      ...s,
+      order: ord >= 2 ? ord + 1 : ord
+    };
+  });
+  bumped.push({ id: 'messengers', type: 'messengers', enabled: true, order: 2, data });
+  return bumped.sort((a, b) => {
+    const ao = Number(a.order);
+    const bo = Number(b.order);
+    return (Number.isFinite(ao) ? ao : 0) - (Number.isFinite(bo) ? bo : 0);
+  });
+}
+
 export const getCardConfig = async (req, res) => {
   if (!requireUser(req, res)) return;
   try {
@@ -395,9 +567,12 @@ export const getCardConfig = async (req, res) => {
     if (business.ownerId !== req.user.userId) {
       return res.status(403).json({ error: 'Access denied. You are not the owner of this business' });
     }
-    const sections = business.card?.sections?.length
-      ? business.card.sections
+    let sections = business.card?.sections?.length
+      ? [...business.card.sections]
       : buildDefaultSections(business);
+    sections = ensureMessengersSectionInCard(sections, business);
+    sections = sanitizeCardSectionList(sections);
+    sections = mergeCardSectionsWithDefaults(sections, business);
     return res.json({ data: { sections, version: business.card?.version || 1 } });
   } catch (error) {
     return res.status(500).json({ error: error.message });

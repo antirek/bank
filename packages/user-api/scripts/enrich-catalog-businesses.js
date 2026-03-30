@@ -87,17 +87,20 @@ function hasAnyWorkingDay(wh) {
 function normalizeMessengers(m) {
   return {
     telegram: m?.telegram || '',
-    whatsapp: m?.whatsapp || ''
+    whatsapp: m?.whatsapp || '',
+    vk: m?.vk || '',
+    max: m?.max || ''
   };
 }
 
 function buildCardSections(b) {
+  const phones = Array.isArray(b.contacts?.phones) ? b.contacts.phones.filter(Boolean) : [];
   const contacts = {
-    phones: Array.isArray(b.contacts?.phones) ? b.contacts.phones.filter(Boolean) : [],
+    phones,
     email: b.contacts?.email || '',
-    website: b.contacts?.website || '',
-    messengers: normalizeMessengers(b.contacts?.messengers)
+    website: b.contacts?.website || ''
   };
+  const messengerData = normalizeMessengers(b.contacts?.messengers);
   const gallery = Array.isArray(b.gallery) ? b.gallery.filter(Boolean) : [];
   return [
     {
@@ -113,19 +116,20 @@ function buildCardSections(b) {
       }
     },
     { id: 'contacts', type: 'contacts', enabled: true, order: 1, data: contacts },
-    { id: 'working_hours', type: 'working_hours', enabled: true, order: 2, data: { ...b.workingHours } },
+    { id: 'messengers', type: 'messengers', enabled: true, order: 2, data: { ...messengerData } },
+    { id: 'working_hours', type: 'working_hours', enabled: true, order: 3, data: { ...b.workingHours } },
     {
       id: 'address',
       type: 'address',
       enabled: !!(b.address || '').trim(),
-      order: 3,
+      order: 4,
       data: { address: (b.address || '').trim() }
     },
     {
       id: 'gallery',
       type: 'gallery',
       enabled: gallery.length > 0,
-      order: 4,
+      order: 5,
       data: { images: gallery }
     }
   ];
@@ -147,7 +151,7 @@ function enrichOne(business) {
 
   const phones = business.contacts?.phones?.filter((p) => p && String(p).trim()) || [];
   if (!business.contacts) {
-    business.contacts = { phones: [], email: '', website: '', messengers: { telegram: '', whatsapp: '' } };
+    business.contacts = { phones: [], email: '', website: '', messengers: { telegram: '', whatsapp: '', vk: '', max: '' } };
     changed = true;
   }
   if (phones.length === 0) {

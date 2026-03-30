@@ -161,8 +161,8 @@
           aria-labelledby="tab-info"
           :aria-hidden="activeTab !== 'info'"
         >
-          <div v-if="sectionsForDisplay.length" class="card-sections">
-            <section v-for="section in sectionsForDisplay" :key="section.id" :class="sectionCardClass(section.type)">
+          <div v-if="infoSectionsForDisplay.length" class="card-sections">
+            <section v-for="section in infoSectionsForDisplay" :key="section.id" :class="sectionCardClass(section.type)">
               <h3>{{ sectionTitle(section.type) }}</h3>
               <template v-if="section.type === 'address'">
                 <p>{{ section.data.address }}</p>
@@ -174,6 +174,46 @@
                 </p>
                 <ul v-if="section.data.phones?.length">
                   <li v-for="phone in section.data.phones" :key="phone">{{ phone }}</li>
+                </ul>
+              </template>
+              <template v-else-if="section.type === 'messengers' && hasMessengersSection(section.data)">
+                <ul class="messengers-list">
+                  <li v-if="section.data.telegram?.trim()">
+                    Telegram:
+                    <a
+                      :href="messengerHref('telegram', section.data.telegram)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      >{{ section.data.telegram.trim() }}</a
+                    >
+                  </li>
+                  <li v-if="section.data.whatsapp?.trim()">
+                    WhatsApp:
+                    <a
+                      :href="messengerHref('whatsapp', section.data.whatsapp)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      >{{ section.data.whatsapp.trim() }}</a
+                    >
+                  </li>
+                  <li v-if="section.data.vk?.trim()">
+                    ВКонтакте:
+                    <a
+                      :href="messengerHref('vk', section.data.vk)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      >{{ section.data.vk.trim() }}</a
+                    >
+                  </li>
+                  <li v-if="section.data.max?.trim()">
+                    Max:
+                    <a
+                      :href="messengerHref('max', section.data.max)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      >{{ section.data.max.trim() }}</a
+                    >
+                  </li>
                 </ul>
               </template>
               <template v-else-if="section.type === 'working_hours'">
@@ -442,11 +482,31 @@ const isOwner = computed(() => {
 
 const fallbackSections = computed(() => {
   if (!business.value) return [];
+  const c = business.value.contacts || { phones: [], email: '', website: '', messengers: {} };
+  const m = c.messengers || {};
   return [
     { id: 'address', type: 'address', enabled: !!business.value.address, order: 0, data: { address: business.value.address || business.value.location?.address || '' } },
-    { id: 'contacts', type: 'contacts', enabled: true, order: 1, data: business.value.contacts || { phones: [], email: '', website: '' } },
-    { id: 'working_hours', type: 'working_hours', enabled: true, order: 2, data: business.value.workingHours || {} },
-    { id: 'gallery', type: 'gallery', enabled: Array.isArray(business.value.gallery) && business.value.gallery.length > 0, order: 3, data: { images: business.value.gallery || [] } }
+    {
+      id: 'contacts',
+      type: 'contacts',
+      enabled: true,
+      order: 1,
+      data: { phones: c.phones || [], email: c.email || '', website: c.website || '' }
+    },
+    {
+      id: 'messengers',
+      type: 'messengers',
+      enabled: !!(m.telegram || m.whatsapp || m.vk || m.max),
+      order: 2,
+      data: {
+        telegram: m.telegram || '',
+        whatsapp: m.whatsapp || '',
+        vk: m.vk || '',
+        max: m.max || ''
+      }
+    },
+    { id: 'working_hours', type: 'working_hours', enabled: true, order: 3, data: business.value.workingHours || {} },
+    { id: 'gallery', type: 'gallery', enabled: Array.isArray(business.value.gallery) && business.value.gallery.length > 0, order: 4, data: { images: business.value.gallery || [] } }
   ];
 });
 
@@ -495,6 +555,13 @@ const sectionsForDisplay = computed(() => {
   return out;
 });
 
+/** Скрываем пустую секцию «Мессенджеры», чтобы не оставался заголовок без строк. */
+const infoSectionsForDisplay = computed(() =>
+  sectionsForDisplay.value.filter(
+    (s) => s.type !== 'messengers' || hasMessengersSection(s.data)
+  )
+);
+
 const halfWidthSectionCount = computed(
   () => renderedSections.value.filter((s) => HALF_WIDTH_SECTION_TYPES.has(s.type)).length
 );
@@ -511,10 +578,40 @@ function sectionCardClass(type) {
 const sectionTitle = (type) => ({
   address: 'Адрес',
   contacts: 'Контакты',
+  messengers: 'Мессенджеры',
   working_hours: 'Время работы',
   gallery: 'Галерея',
   hero: 'Основное'
 }[type] || type);
+
+function hasMessengersSection(data) {
+  return !!(
+    data?.telegram?.trim() ||
+    data?.whatsapp?.trim() ||
+    data?.vk?.trim() ||
+    data?.max?.trim()
+  );
+}
+
+function messengerHref(kind, raw) {
+  const s = String(raw || '').trim();
+  if (!s) return '#';
+  if (/^https?:\/\//i.test(s)) return s;
+  if (kind === 'telegram') {
+    const u = s.replace(/^@/, '');
+    return `https://t.me/${encodeURIComponent(u)}`;
+  }
+  if (kind === 'whatsapp') {
+    const digits = s.replace(/\D/g, '');
+    if (digits.length >= 10) return `https://wa.me/${digits}`;
+    return `https://wa.me/${encodeURIComponent(s)}`;
+  }
+  if (kind === 'vk') {
+    if (s.includes('vk.com') || s.includes('vkontakte.ru')) return s.startsWith('http') ? s : `https://${s}`;
+    return `https://vk.com/${encodeURIComponent(s.replace(/^\//, ''))}`;
+  }
+  return s.startsWith('http') ? s : `https://${s}`;
+}
 
 const galleryImages = (section) => section.data?.images || [];
 
@@ -765,6 +862,7 @@ onUnmounted(() => {
 .business-content {
   display: flex;
   flex-direction: column;
+  font-size: 0.9375rem;
   background: white;
   border-radius: 12px;
   padding: 2rem;
@@ -814,7 +912,7 @@ onUnmounted(() => {
 .header-titles h1 {
   margin: 0 0 0.35rem 0;
   color: #333;
-  font-size: clamp(1.35rem, 4vw, 1.75rem);
+  font-size: clamp(1.22rem, 3.65vw, 1.58rem);
   line-height: 1.2;
 }
 
@@ -832,14 +930,14 @@ onUnmounted(() => {
   font-weight: 600;
   font-family: monospace;
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 0.875rem;
 }
 
 .description {
   color: #666;
   margin: 1rem 0 0 0;
   line-height: 1.6;
-  font-size: 1.1rem;
+  font-size: 1.035rem;
 }
 
 .business-tabs {
@@ -860,7 +958,7 @@ onUnmounted(() => {
   border: none;
   background: #fff;
   cursor: pointer;
-  font-size: 0.92rem;
+  font-size: 0.86rem;
   font-weight: 600;
   color: #555;
   border-right: 1px solid #ddd;
@@ -945,7 +1043,7 @@ onUnmounted(() => {
 .tab-panel-empty {
   margin: 0;
   color: #888;
-  font-size: 0.95rem;
+  font-size: 0.88rem;
 }
 
 .card-sections {
@@ -978,6 +1076,7 @@ onUnmounted(() => {
 
 .section-card h3 {
   margin: 0 0 0.75rem 0;
+  font-size: 1.05rem;
 }
 
 .hours-list {
@@ -986,6 +1085,19 @@ onUnmounted(() => {
   margin: 0;
   display: grid;
   gap: 0.35rem;
+}
+
+.messengers-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.messengers-list a {
+  color: #667eea;
+  word-break: break-all;
 }
 
 .gallery-grid {
@@ -1031,13 +1143,13 @@ onUnmounted(() => {
   justify-content: center;
   width: 1.2em;
   height: 1.2em;
-  font-size: 1.12rem;
+  font-size: 1.04rem;
   line-height: 1;
   transform: translateY(-0.5px);
 }
 
 .action-icon--subscribed {
-  font-size: 1.05rem;
+  font-size: 0.98rem;
 }
 
 .action-icon--svg {
@@ -1065,7 +1177,7 @@ onUnmounted(() => {
   color: #2e7d32;
   border: 1px solid #c8e6c9;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  font-size: 1.08rem;
+  font-size: 1rem;
   font-weight: 800;
   flex-shrink: 0;
 }
@@ -1084,7 +1196,7 @@ onUnmounted(() => {
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 0.9375rem;
   font-weight: 600;
   cursor: pointer;
   text-decoration: none;
@@ -1112,7 +1224,7 @@ onUnmounted(() => {
   background: #e8f5e9;
   color: #2e7d32;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 0.9375rem;
   font-weight: 600;
   display: inline-block;
 }
@@ -1150,12 +1262,12 @@ onUnmounted(() => {
 .news-heading {
   margin: 0;
   color: #333;
-  font-size: 1.5rem;
+  font-size: 1.35rem;
 }
 
 .btn-add-news {
   padding: 0.5rem 1rem;
-  font-size: 0.9rem;
+  font-size: 0.84rem;
 }
 
 .add-news-form {
@@ -1176,7 +1288,7 @@ onUnmounted(() => {
 .form-group label {
   font-weight: 500;
   color: #333;
-  font-size: 0.9rem;
+  font-size: 0.84rem;
 }
 
 .form-group input,
@@ -1184,7 +1296,7 @@ onUnmounted(() => {
   padding: 0.75rem;
   border: 2px solid #e0e0e0;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 0.9375rem;
   font-family: inherit;
   transition: border-color 0.2s;
   resize: vertical;
@@ -1244,13 +1356,13 @@ onUnmounted(() => {
 .news-item-header h3 {
   margin: 0;
   color: #333;
-  font-size: 1.2rem;
+  font-size: 1.08rem;
   flex: 1;
 }
 
 .news-date {
   color: #666;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -1291,7 +1403,7 @@ onUnmounted(() => {
   height: 2rem;
   border: none;
   background: transparent;
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   line-height: 1;
   color: #666;
   cursor: pointer;
@@ -1305,13 +1417,13 @@ onUnmounted(() => {
 
 .qr-modal-title {
   margin: 0 2rem 0.5rem 0;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   color: #333;
 }
 
 .qr-modal-hint {
   margin: 0 0 0.75rem 0;
-  font-size: 0.9rem;
+  font-size: 0.84rem;
   color: #666;
   line-height: 1.45;
 }
@@ -1319,7 +1431,7 @@ onUnmounted(() => {
 .qr-modal-url {
   display: block;
   margin-bottom: 1rem;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   word-break: break-all;
   color: #667eea;
   text-decoration: none;
@@ -1347,7 +1459,7 @@ onUnmounted(() => {
 .qr-modal-error {
   margin: 0;
   color: #888;
-  font-size: 0.95rem;
+  font-size: 0.88rem;
 }
 
 .qr-modal-error {

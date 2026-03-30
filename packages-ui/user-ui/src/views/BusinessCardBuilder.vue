@@ -126,6 +126,18 @@
             <input v-model="selectedSection.data.website" type="url" placeholder="https://..." />
           </template>
 
+          <template v-else-if="selectedSection?.type === 'messengers'">
+            <p class="hint">Можно указать @ник или полную ссылку. Пустые поля на сайте не показываются.</p>
+            <label>Telegram</label>
+            <input v-model="selectedSection.data.telegram" type="text" placeholder="@username или https://t.me/..." />
+            <label>WhatsApp</label>
+            <input v-model="selectedSection.data.whatsapp" type="text" placeholder="+79991234567 или ссылка wa.me/..." />
+            <label>ВКонтакте</label>
+            <input v-model="selectedSection.data.vk" type="text" placeholder="vk.com/id или полная ссылка" />
+            <label>Max</label>
+            <input v-model="selectedSection.data.max" type="text" placeholder="Ссылка на чат в Max" />
+          </template>
+
           <template v-else-if="selectedSection?.type === 'address'">
             <label>Адрес *</label>
             <textarea v-model="selectedSection.data.address" rows="6" placeholder="Город, улица" />
@@ -183,6 +195,31 @@
                 </p>
                 <ul v-if="s.data.phones?.length">
                   <li v-for="p in s.data.phones" :key="p">{{ p }}</li>
+                </ul>
+              </section>
+              <section v-else-if="s.type === 'messengers' && hasMessengers(s.data)" class="preview-block">
+                <h4>Мессенджеры</h4>
+                <ul class="preview-messengers">
+                  <li v-if="s.data.telegram?.trim()">
+                    Telegram:
+                    <a :href="messengerHref('telegram', s.data.telegram)" target="_blank" rel="noopener noreferrer">{{
+                      s.data.telegram.trim()
+                    }}</a>
+                  </li>
+                  <li v-if="s.data.whatsapp?.trim()">
+                    WhatsApp:
+                    <a :href="messengerHref('whatsapp', s.data.whatsapp)" target="_blank" rel="noopener noreferrer">{{
+                      s.data.whatsapp.trim()
+                    }}</a>
+                  </li>
+                  <li v-if="s.data.vk?.trim()">
+                    ВКонтакте:
+                    <a :href="messengerHref('vk', s.data.vk)" target="_blank" rel="noopener noreferrer">{{ s.data.vk.trim() }}</a>
+                  </li>
+                  <li v-if="s.data.max?.trim()">
+                    Max:
+                    <a :href="messengerHref('max', s.data.max)" target="_blank" rel="noopener noreferrer">{{ s.data.max.trim() }}</a>
+                  </li>
                 </ul>
               </section>
               <section v-else-if="s.type === 'working_hours'" class="preview-block">
@@ -257,13 +294,20 @@ function createEmptySections() {
       type: 'contacts',
       enabled: true,
       order: 1,
-      data: { phones: [], email: '', website: '', messengers: { telegram: '', whatsapp: '' } }
+      data: { phones: [], email: '', website: '' }
+    },
+    {
+      id: 'messengers',
+      type: 'messengers',
+      enabled: true,
+      order: 2,
+      data: { telegram: '', whatsapp: '', vk: '', max: '' }
     },
     {
       id: 'working_hours',
       type: 'working_hours',
       enabled: true,
-      order: 2,
+      order: 3,
       data: {
         mon: emptyDay(),
         tue: emptyDay(),
@@ -274,8 +318,8 @@ function createEmptySections() {
         sun: emptyDay()
       }
     },
-    { id: 'address', type: 'address', enabled: true, order: 3, data: { address: '' } },
-    { id: 'gallery', type: 'gallery', enabled: true, order: 4, data: { images: [] } }
+    { id: 'address', type: 'address', enabled: true, order: 4, data: { address: '' } },
+    { id: 'gallery', type: 'gallery', enabled: true, order: 5, data: { images: [] } }
   ];
 }
 
@@ -285,6 +329,7 @@ const titleByType = (type) =>
   ({
     hero: 'Основное',
     contacts: 'Контакты',
+    messengers: 'Мессенджеры',
     working_hours: 'Время работы',
     address: 'Адрес',
     gallery: 'Галерея'
@@ -327,6 +372,35 @@ function openPublicCard() {
 
 function hasContacts(data) {
   return !!(data?.email || data?.website || (data?.phones && data.phones.length));
+}
+
+function hasMessengers(data) {
+  return !!(
+    data?.telegram?.trim() ||
+    data?.whatsapp?.trim() ||
+    data?.vk?.trim() ||
+    data?.max?.trim()
+  );
+}
+
+function messengerHref(kind, raw) {
+  const s = String(raw || '').trim();
+  if (!s) return '#';
+  if (/^https?:\/\//i.test(s)) return s;
+  if (kind === 'telegram') {
+    const u = s.replace(/^@/, '');
+    return `https://t.me/${encodeURIComponent(u)}`;
+  }
+  if (kind === 'whatsapp') {
+    const digits = s.replace(/\D/g, '');
+    if (digits.length >= 10) return `https://wa.me/${digits}`;
+    return `https://wa.me/${encodeURIComponent(s)}`;
+  }
+  if (kind === 'vk') {
+    if (s.includes('vk.com') || s.includes('vkontakte.ru')) return s.startsWith('http') ? s : `https://${s}`;
+    return `https://vk.com/${encodeURIComponent(s.replace(/^\//, ''))}`;
+  }
+  return s.startsWith('http') ? s : `https://${s}`;
 }
 
 function selectSection(id) {
@@ -773,6 +847,18 @@ watch(
   padding: 0;
   margin: 0;
   font-size: 0.95rem;
+}
+.preview-messengers {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.95rem;
+  display: grid;
+  gap: 0.35rem;
+}
+.preview-messengers a {
+  color: #667eea;
+  word-break: break-all;
 }
 .preview-gallery {
   display: grid;

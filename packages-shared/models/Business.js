@@ -52,7 +52,9 @@ const businessSchema = new mongoose.Schema({
     website: { type: String, default: '' },
     messengers: {
       telegram: { type: String, default: '' },
-      whatsapp: { type: String, default: '' }
+      whatsapp: { type: String, default: '' },
+      vk: { type: String, default: '' },
+      max: { type: String, default: '' }
     }
   },
   workingHours: {
