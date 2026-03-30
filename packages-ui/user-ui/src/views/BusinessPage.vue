@@ -9,7 +9,7 @@
         {{ error }}
       </div>
 
-      <div v-else-if="business" class="business-content">
+      <div v-else-if="business" :class="['business-content', { 'business-content--chat': activeTab === 'chat' }]">
         <div class="business-header-section">
           <div class="header-top-row">
             <div class="header-brand">
@@ -137,14 +137,29 @@
           >
             Инфо
           </button>
+          <button
+            id="tab-chat"
+            type="button"
+            class="tab-btn"
+            role="tab"
+            :aria-selected="activeTab === 'chat'"
+            :aria-disabled="!authStore.isAuthenticated"
+            :disabled="!authStore.isAuthenticated"
+            :tabindex="activeTab === 'chat' ? 0 : -1"
+            :title="!authStore.isAuthenticated ? 'Войдите, чтобы открыть чат' : undefined"
+            @click="selectChatTab"
+          >
+            Чат
+          </button>
         </div>
 
         <div
           id="panel-info"
+          v-show="activeTab === 'info'"
           class="tab-panel"
           role="tabpanel"
           aria-labelledby="tab-info"
-          :hidden="activeTab !== 'info'"
+          :aria-hidden="activeTab !== 'info'"
         >
           <div v-if="sectionsForDisplay.length" class="card-sections">
             <section v-for="section in sectionsForDisplay" :key="section.id" :class="sectionCardClass(section.type)">
@@ -182,10 +197,11 @@
 
         <div
           id="panel-news"
+          v-show="activeTab === 'news'"
           class="tab-panel"
           role="tabpanel"
           aria-labelledby="tab-news"
-          :hidden="activeTab !== 'news'"
+          :aria-hidden="activeTab !== 'news'"
         >
           <div class="news-section">
             <div class="news-header">
@@ -250,6 +266,36 @@
             </div>
           </div>
         </div>
+
+        <div
+          id="panel-chat"
+          v-show="activeTab === 'chat'"
+          class="tab-panel tab-panel--chat"
+          role="tabpanel"
+          aria-labelledby="tab-chat"
+          :aria-hidden="activeTab !== 'chat'"
+        >
+          <template v-if="authStore.isAuthenticated && isOwner">
+            <div class="tab-chat-owner-hint">
+              <p class="tab-chat-owner-text">
+                Это ваша карточка. Переписки с клиентами собраны в разделе «Обращения».
+              </p>
+              <router-link
+                :to="{ path: '/my/profile/business-chats', query: { business: business.businessId } }"
+                class="btn btn-primary"
+              >
+                Открыть обращения
+              </router-link>
+            </div>
+          </template>
+          <template v-else-if="authStore.isAuthenticated && !isOwner">
+            <div v-if="chatTabError" class="error-message tab-chat-error">{{ chatTabError }}</div>
+            <div v-else-if="chatTabLoading" class="loading-small">Загрузка чата…</div>
+            <div v-else-if="clientDialogId" class="tab-panel-chat-inner">
+              <DialogView :dialog-id="String(clientDialogId)" :embedded="true" />
+            </div>
+          </template>
+        </div>
       </div>
     </div>
 
@@ -299,12 +345,12 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import QRCode from 'qrcode';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import api from '@boqq/api-client';
+import DialogView from './DialogView.vue';
 
 const route = useRoute();
-const router = useRouter();
 const authStore = useAuthStore();
 const authUiUrl = import.meta.env.VITE_AUTH_UI_URL || 'http://localhost:5174';
 const business = ref(null);
@@ -316,6 +362,11 @@ const error = ref('');
 const subscribing = ref(false);
 const isSubscribed = ref(false);
 const startingDialog = ref(false);
+/** Диалог клиента с этим бизнесом для вкладки «Чат». */
+const clientDialogId = ref('');
+const chatDialogBusinessId = ref('');
+const chatTabLoading = ref(false);
+const chatTabError = ref('');
 const newsLoading = ref(false);
 const showAddNewsForm = ref(false);
 const addingNews = ref(false);
@@ -468,13 +519,83 @@ const sectionTitle = (type) => ({
 const galleryImages = (section) => section.data?.images || [];
 
 function applyDefaultTab() {
+  if (activeTab.value === 'chat') {
+    return;
+  }
   activeTab.value = news.value.length > 0 ? 'news' : 'info';
 }
+
+function resetChatTabState() {
+  clientDialogId.value = '';
+  chatDialogBusinessId.value = '';
+  chatTabError.value = '';
+  chatTabLoading.value = false;
+}
+
+async function loadClientDialogForChatTab() {
+  if (!authStore.isAuthenticated || !business.value || isOwner.value) {
+    return;
+  }
+  const bid = business.value.businessId;
+  if (clientDialogId.value && chatDialogBusinessId.value === bid) {
+    return;
+  }
+
+  chatTabLoading.value = true;
+  chatTabError.value = '';
+
+  try {
+    const response = await api.get('/dialogs/me', { params: { limit: 100 } });
+    const dialogs = response.data.data || [];
+    const existing = dialogs.find((d) => d.businessId === bid);
+    if (existing) {
+      clientDialogId.value = existing.dialogId;
+      chatDialogBusinessId.value = bid;
+      return;
+    }
+    const startRes = await api.post(`/businesses/${bid}/dialogs/start`);
+    clientDialogId.value = startRes.data.data.dialogId;
+    chatDialogBusinessId.value = bid;
+  } catch (err) {
+    if (err.response?.status === 401) {
+      return;
+    }
+    chatTabError.value =
+      err.response?.data?.error || err.message || 'Не удалось открыть чат';
+    clientDialogId.value = '';
+    chatDialogBusinessId.value = '';
+  } finally {
+    chatTabLoading.value = false;
+  }
+}
+
+function selectChatTab() {
+  if (!authStore.isAuthenticated) {
+    return;
+  }
+  activeTab.value = 'chat';
+  if (!isOwner.value) {
+    loadClientDialogForChatTab();
+  }
+}
+
+watch(
+  () => authStore.isAuthenticated,
+  (auth) => {
+    if (!auth) {
+      resetChatTabState();
+      if (activeTab.value === 'chat') {
+        activeTab.value = 'info';
+      }
+    }
+  }
+);
 
 const loadBusiness = async () => {
   loading.value = true;
   error.value = '';
-  
+  resetChatTabState();
+
   try {
     const response = await api.get(`/businesses/slug/${route.params.slug}`);
     business.value = response.data.data;
@@ -529,12 +650,13 @@ const handleStartDialog = async () => {
   }
 
   startingDialog.value = true;
-  
+  activeTab.value = 'chat';
+
   try {
-    const response = await api.post(`/businesses/${business.value.businessId}/dialogs/start`);
-    const dialogId = response.data.data.dialogId;
-    // Переходим на страницу диалога
-    router.push(`/my/dialogs/${dialogId}`);
+    await loadClientDialogForChatTab();
+    if (chatTabError.value) {
+      alert(chatTabError.value);
+    }
   } catch (err) {
     const errorMessage = err.response?.data?.error || err.message || 'Ошибка при создании диалога';
     alert(errorMessage);
@@ -641,10 +763,16 @@ onUnmounted(() => {
 }
 
 .business-content {
+  display: flex;
+  flex-direction: column;
   background: white;
   border-radius: 12px;
   padding: 2rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.business-content--chat {
+  min-height: calc(100vh - 5rem);
 }
 
 .business-header-section {
@@ -718,7 +846,8 @@ onUnmounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 0;
-  margin: 1.25rem 0 0 0;
+  /* Не дублируем отступ с .business-header-section: иначе при flex не схлопываются margin’ы — табы «прыгают» на вкладке Чат */
+  margin: 0;
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid #ddd;
@@ -752,9 +881,65 @@ onUnmounted(() => {
   color: #fff;
 }
 
+.tab-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  color: #999;
+}
+
+.tab-btn:disabled:hover {
+  background: #fff;
+  color: #999;
+}
+
 .tab-panel {
   margin-top: 1.25rem;
   padding-top: 0.25rem;
+}
+
+.tab-panel--chat {
+  min-height: 440px;
+  display: flex;
+  flex-direction: column;
+}
+
+.business-content--chat .tab-panel--chat {
+  flex: 1;
+  min-height: 0;
+}
+
+.tab-panel-chat-inner {
+  flex: 1;
+  min-height: 380px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e2e4ed;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+}
+
+.business-content--chat .tab-panel-chat-inner {
+  min-height: 0;
+  height: 100%;
+}
+
+.tab-chat-owner-hint {
+  padding: 1.25rem;
+  background: #f8f9fa;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+}
+
+.tab-chat-owner-text {
+  margin: 0 0 1rem 0;
+  color: #555;
+  line-height: 1.5;
+}
+
+.tab-chat-error {
+  margin-top: 0;
 }
 
 .tab-panel-empty {
