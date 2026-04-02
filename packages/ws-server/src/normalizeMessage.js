@@ -16,7 +16,7 @@ export async function normalizeMessageCreate(message, boqqUserId) {
     currentUser?.mms3UserId || boqqUserId.replace(/\./g, '_');
 
   return {
-    messageId: message.messageId,
+    messageId: message.messageId ?? message.id,
     senderId: message.senderId,
     senderName:
       userMap[senderId]?.name ||

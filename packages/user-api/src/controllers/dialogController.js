@@ -13,6 +13,19 @@ function isMms3Unavailable(error) {
   return error?.code === 'ECONNREFUSED' || String(error?.message || '').includes('ECONNREFUSED');
 }
 
+/**
+ * Ответ MMS3 на создание сущности: поля то на корне тела, то внутри data (как у списков .data[]).
+ */
+function unwrapMms3CreatedResource(axiosResponse) {
+  const body = axiosResponse?.data;
+  if (!body || typeof body !== 'object') return {};
+  const inner = body.data;
+  if (inner && typeof inner === 'object' && !Array.isArray(inner)) {
+    return inner;
+  }
+  return body;
+}
+
 // Начать диалог с бизнесом
 export const startDialog = async (req, res) => {
   if (!requireUser(req, res)) return;
@@ -598,15 +611,19 @@ export const sendMessage = async (req, res) => {
 
     await dialog.save();
 
+    const created = unwrapMms3CreatedResource(messageResponse);
+    const messageId = created.messageId ?? created.id;
+    const createdAt = created.createdAt;
+
     res.json({
       data: {
-        messageId: messageResponse.data.messageId,
+        messageId,
         senderId: user.mms3UserId,
         senderName: user.name || user.phone,
         isOwn: true,
         content: content.trim(),
         type: 'internal.text',
-        createdAt: messageResponse.data.createdAt,
+        createdAt,
         status: 'sent'
       }
     });
