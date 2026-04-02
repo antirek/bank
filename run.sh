@@ -13,6 +13,14 @@ AUTH_API_PORT="${AUTH_API_PORT:-3102}"
 USER_UI_PORT="${USER_UI_PORT:-5173}"
 AUTH_UI_PORT="${AUTH_UI_PORT:-5174}"
 WS_SERVER_PORT="${WS_SERVER_PORT:-3103}"
+OWNER_PWA_PORT="${OWNER_PWA_PORT:-5175}"
+
+# LAN: Vite слушает этот адрес; VITE_* — редиректы между UI (auth → user/owner).
+DEV_LAN_HOST="${DEV_LAN_HOST:-192.168.0.42}"
+export DEV_SERVER_HOST="${DEV_SERVER_HOST:-$DEV_LAN_HOST}"
+export VITE_USER_UI_URL="${VITE_USER_UI_URL:-http://${DEV_LAN_HOST}:${USER_UI_PORT}}"
+export VITE_AUTH_UI_URL="${VITE_AUTH_UI_URL:-http://${DEV_LAN_HOST}:${AUTH_UI_PORT}}"
+export VITE_OWNER_APP_PUBLIC_URL="${VITE_OWNER_APP_PUBLIC_URL:-http://${DEV_LAN_HOST}:${OWNER_PWA_PORT}}"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$REPO_ROOT"
@@ -44,11 +52,15 @@ kill_port "$AUTH_API_PORT" "auth-api"
 kill_port "$USER_UI_PORT" "user-ui"
 kill_port "$AUTH_UI_PORT" "auth-ui"
 kill_port "$WS_SERVER_PORT" "ws-server"
+kill_port "$OWNER_PWA_PORT" "owner-pwa"
 
 echo ""
 echo "=== Сборка UI ==="
 npm run build:ui
 
 echo ""
-echo "=== Запуск всех сервисов ==="
+echo "=== Запуск всех сервисов (Vite: ${DEV_SERVER_HOST}) ==="
+echo "  user-ui:    http://${DEV_LAN_HOST}:${USER_UI_PORT}"
+echo "  auth-ui:    http://${DEV_LAN_HOST}:${AUTH_UI_PORT}"
+echo "  owner-pwa:  http://${DEV_LAN_HOST}:${OWNER_PWA_PORT}"
 npm run dev:all

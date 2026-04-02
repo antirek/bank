@@ -12,7 +12,7 @@
   "scripts": {
     "dev": "concurrently -n be,fe,ws -c blue,green,cyan \"npm run start:user-api\" \"npm run dev:user-ui:wait-api\" \"npm run dev:ws-server\"",
     "dev:ws-server": "npm run dev -w @boqq/ws-server",
-    "dev:all": "concurrently -n user-api,user-ui,auth-api,auth-ui,ws -c blue,green,yellow,magenta,cyan \"npm run dev:user-api\" \"npm run dev:user-ui:wait-api\" \"npm run dev:auth-api\" \"npm run dev:auth-ui:wait-api\" \"npm run dev:ws-server\"",
+    "dev:all": "concurrently -n user-api,user-ui,auth-api,auth-ui,ws,owner -c blue,green,yellow,magenta,cyan,red \"npm run dev:user-api\" \"npm run dev:user-ui:wait-api\" \"npm run dev:auth-api\" \"npm run dev:auth-ui:wait-api\" \"npm run dev:ws-server\" \"npm run dev:owner-pwa:wait-api\"",
     "dev:user-api": "npm run dev -w @boqq/user-api",
     "dev:user-ui": "npm run dev -w @boqq/user-ui",
     "dev:user-ui:wait-api": "wait-on tcp:127.0.0.1:3101 && npm run dev -w @boqq/user-ui",
@@ -21,9 +21,13 @@
     "dev:auth-ui:wait-api": "wait-on tcp:127.0.0.1:3102 && npm run dev -w @boqq/auth-ui",
     "start:user-api": "npm start -w @boqq/user-api",
     "start:auth-api": "npm start -w @boqq/auth-api",
-    "build:ui": "npm run build:user-ui && npm run build:auth-ui",
+    "build:ui": "npm run build:user-ui && npm run build:auth-ui && npm run build:owner-pwa",
     "build:user-ui": "npm run build -w @boqq/user-ui",
     "build:auth-ui": "npm run build -w @boqq/auth-ui",
+    "dev:owner-pwa": "npm run dev -w @boqq/owner-pwa",
+    "dev:owner-pwa:wait-api": "wait-on tcp:127.0.0.1:3101 && npm run dev -w @boqq/owner-pwa",
+    "build:owner-pwa": "npm run build -w @boqq/owner-pwa",
+    "preview:owner-pwa": "npm run preview -w @boqq/owner-pwa",
     "preview:user-ui": "npm run preview -w @boqq/user-ui",
     "preview:auth-ui": "npm run preview -w @boqq/auth-ui",
     "install:all": "npm install"

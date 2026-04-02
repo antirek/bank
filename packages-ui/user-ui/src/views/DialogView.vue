@@ -1,9 +1,23 @@
 <template>
-  <div class="dialog-view" :class="{ 'dialog-view--embedded': embedded }">
+  <div
+    class="dialog-view"
+    :class="{
+      'dialog-view--embedded': embedded,
+      'dialog-view--pwa-safe': pwaSafeArea
+    }"
+  >
     <div class="dialog-container">
       <!-- Заголовок -->
       <div class="dialog-header">
         <router-link v-if="!embedded" :to="computedBackUrl" class="back-button">← Назад</router-link>
+        <button
+          v-else-if="embedded && showEmbeddedBack"
+          type="button"
+          class="back-button back-button--embedded"
+          @click="onEmbeddedBack"
+        >
+          ← Назад
+        </button>
         <h2>{{ dialogInfo.title }}</h2>
       </div>
 
@@ -64,8 +78,8 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useAuthStore } from '../stores/auth';
-import { useChatRealtimeStore } from '../stores/chatRealtime';
+import { useAuthStore } from '@/stores/auth';
+import { useChatRealtimeStore } from '@/stores/chatRealtime';
 import api from '@boqq/api-client';
 
 const props = defineProps({
@@ -80,8 +94,20 @@ const props = defineProps({
   embedded: {
     type: Boolean,
     default: false
+  },
+  /** Кнопка «Назад» во встроенном режиме (например мобильный стек владельца). */
+  showEmbeddedBack: {
+    type: Boolean,
+    default: false
+  },
+  /** Отступы safe-area у поля ввода (PWA / iPhone). */
+  pwaSafeArea: {
+    type: Boolean,
+    default: false
   }
 });
+
+const emit = defineEmits(['embedded-back']);
 
 const route = useRoute();
 const router = useRouter();
@@ -108,6 +134,10 @@ const dialogInfo = ref({
 const hasMore = ref(false);
 const loadingMore = ref(false);
 const scrollPosition = ref(0);
+function onEmbeddedBack() {
+  emit('embedded-back');
+}
+
 const computedBackUrl = computed(() => {
   if (props.backUrl) return props.backUrl;
   if (dialogInfo.value.businessSlug) {
@@ -384,6 +414,18 @@ watch(() => props.dialogId, async (newId) => {
 
 .back-button:hover {
   color: #5568d3;
+}
+
+button.back-button--embedded {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
+.dialog-view--pwa-safe .message-input-container {
+  padding-bottom: calc(0.65rem + env(safe-area-inset-bottom, 0px));
 }
 
 .dialog-header h2 {

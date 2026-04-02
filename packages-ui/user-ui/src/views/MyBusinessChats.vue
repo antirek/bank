@@ -6,8 +6,17 @@
       <p>У вас пока нет бизнесов</p>
     </div>
 
-    <div v-else class="chats-split">
-      <aside class="col col-businesses" aria-label="Бизнесы">
+    <div
+      v-else
+      class="chats-split"
+      :class="{ 'chats-split--stack': isMobileStack }"
+      :style="{ '--chats-top-reserve': layoutTopReserve }"
+    >
+      <aside
+        v-show="!isMobileStack || mobilePanel === 'businesses'"
+        class="col col-businesses"
+        aria-label="Бизнесы"
+      >
         <div class="col-head">Бизнесы</div>
         <div class="col-scroll">
           <button
@@ -24,8 +33,18 @@
         </div>
       </aside>
 
-      <aside class="col col-dialogs" aria-label="Чаты с клиентами">
-        <div class="col-head">Переписки</div>
+      <aside
+        v-show="!isMobileStack || mobilePanel === 'dialogs'"
+        class="col col-dialogs"
+        aria-label="Чаты с клиентами"
+      >
+        <div v-if="isMobileStack" class="col-head col-head--with-nav">
+          <button type="button" class="mobile-back" @click="mobileBackToBusinesses">
+            ←
+          </button>
+          <span class="col-head-title">Переписки</span>
+        </div>
+        <div v-else class="col-head">Переписки</div>
         <template v-if="!selectedBusinessId">
           <div class="col-placeholder">Выберите бизнес</div>
         </template>
@@ -67,7 +86,11 @@
         </template>
       </aside>
 
-      <main class="col col-thread" aria-label="Переписка">
+      <main
+        v-show="!isMobileStack || mobilePanel === 'thread'"
+        class="col col-thread"
+        aria-label="Переписка"
+      >
         <template v-if="!selectedDialogId">
           <div class="thread-empty">Выберите чат слева</div>
         </template>
@@ -75,8 +98,11 @@
           <DialogView
             :key="selectedDialogId"
             :dialog-id="selectedDialogId"
-            :back-url="'/my/profile/business-chats'"
+            :back-url="dialogBackUrl"
+            :show-embedded-back="isMobileStack"
+            :pwa-safe-area="pwaSafeArea"
             embedded
+            @embedded-back="onThreadEmbeddedBack"
           />
         </div>
       </main>
@@ -85,11 +111,36 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useAuthStore } from '../stores/auth';
+import { useAuthStore } from '@/stores/auth';
 import api from '@boqq/api-client';
 import DialogView from './DialogView.vue';
+
+const props = defineProps({
+  /** Базовый path для query business/dialog (профиль или owner-PWA «/»). */
+  chatsBasePath: {
+    type: String,
+    default: '/my/profile/business-chats'
+  },
+  /** Куда ведёт «назад» из встроенного DialogView. */
+  dialogBackUrl: {
+    type: String,
+    default: '/my/profile/business-chats'
+  },
+  /** Отступ сверху под шапку: CSS значение, напр. 260px или 52px. */
+  layoutTopReserve: {
+    type: String,
+    default: '260px'
+  },
+  /** Safe-area у поля ввода в чате (owner-PWA). */
+  pwaSafeArea: {
+    type: Boolean,
+    default: false
+  }
+});
+
+const MOBILE_STACK_MQ = '(max-width: 720px)';
 
 const route = useRoute();
 const router = useRouter();
@@ -106,6 +157,29 @@ const dialogs = ref([]);
 const dialogsLoading = ref(false);
 const dialogsError = ref('');
 const searchQuery = ref('');
+
+const isMobileStack = ref(false);
+const mobilePanel = ref('businesses');
+
+let mqListener = null;
+
+function updateMobileStackFlag() {
+  if (typeof window === 'undefined') return;
+  isMobileStack.value = window.matchMedia(MOBILE_STACK_MQ).matches;
+}
+
+function syncMobilePanelFromRoute() {
+  if (!isMobileStack.value) return;
+  const b = String(route.query.business || '');
+  const d = String(route.query.dialog || '');
+  if (d && b) {
+    mobilePanel.value = 'thread';
+  } else if (b) {
+    mobilePanel.value = 'dialogs';
+  } else {
+    mobilePanel.value = 'businesses';
+  }
+}
 
 const filteredDialogs = computed(() => {
   if (!searchQuery.value.trim()) return dialogs.value;
@@ -193,15 +267,43 @@ function selectBusiness(businessId) {
   selectedBusinessId.value = businessId;
   selectedDialogId.value = '';
   searchQuery.value = '';
-  router.replace({ name: 'ProfileBusinessChats', query: { business: businessId } });
+  router.replace({
+    path: props.chatsBasePath,
+    query: { business: businessId }
+  });
+  if (isMobileStack.value) {
+    mobilePanel.value = 'dialogs';
+  }
 }
 
 function selectDialog(dialogId) {
   selectedDialogId.value = dialogId;
   router.replace({
-    name: 'ProfileBusinessChats',
+    path: props.chatsBasePath,
     query: { business: selectedBusinessId.value, dialog: dialogId }
   });
+  if (isMobileStack.value) {
+    mobilePanel.value = 'thread';
+  }
+}
+
+function mobileBackToBusinesses() {
+  selectedBusinessId.value = '';
+  selectedDialogId.value = '';
+  searchQuery.value = '';
+  router.replace({ path: props.chatsBasePath, query: {} });
+  mobilePanel.value = 'businesses';
+}
+
+function onThreadEmbeddedBack() {
+  selectedDialogId.value = '';
+  router.replace({
+    path: props.chatsBasePath,
+    query: { business: selectedBusinessId.value }
+  });
+  if (isMobileStack.value) {
+    mobilePanel.value = 'dialogs';
+  }
 }
 
 watch(selectedBusinessId, async (id) => {
@@ -221,8 +323,35 @@ watch(selectedDialogId, (id) => {
   }
 });
 
+watch(isMobileStack, () => {
+  syncMobilePanelFromRoute();
+});
+
+watch(
+  () => route.query,
+  () => {
+    syncMobilePanelFromRoute();
+  },
+  { deep: true }
+);
+
 onMounted(() => {
+  updateMobileStackFlag();
+  syncMobilePanelFromRoute();
+  mqListener = () => {
+    updateMobileStackFlag();
+    syncMobilePanelFromRoute();
+  };
+  if (typeof window !== 'undefined') {
+    window.matchMedia(MOBILE_STACK_MQ).addEventListener('change', mqListener);
+  }
   loadBusinesses();
+});
+
+onUnmounted(() => {
+  if (typeof window !== 'undefined' && mqListener) {
+    window.matchMedia(MOBILE_STACK_MQ).removeEventListener('change', mqListener);
+  }
 });
 </script>
 
@@ -258,9 +387,8 @@ onMounted(() => {
   display: grid;
   grid-template-columns: 1fr 3fr 8fr;
   gap: 0.65rem;
-  /* Фиксированная высота под экран: шапка + подменю профиля + отступы (~260px) */
-  height: calc(100vh - 260px);
-  max-height: calc(100vh - 260px);
+  height: calc(100vh - var(--chats-top-reserve, 260px));
+  max-height: calc(100vh - var(--chats-top-reserve, 260px));
   min-height: 280px;
   align-items: stretch;
 }
@@ -475,23 +603,61 @@ onMounted(() => {
   overflow: hidden;
 }
 
+.chats-split--stack {
+  grid-template-columns: 1fr;
+  height: calc(
+    100vh - var(--chats-top-reserve, 260px) - env(safe-area-inset-bottom, 0px)
+  );
+  max-height: calc(
+    100vh - var(--chats-top-reserve, 260px) - env(safe-area-inset-bottom, 0px)
+  );
+}
+
+.chats-split--stack .col {
+  min-height: 0;
+}
+
+.col-head--with-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.col-head-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #555;
+}
+
+.mobile-back {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  color: #667eea;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.1rem 0.35rem;
+  line-height: 1;
+}
+
 @media (max-width: 1100px) {
-  .chats-split {
+  .chats-split:not(.chats-split--stack) {
     grid-template-columns: 1fr;
     height: auto;
     max-height: none;
     min-height: 0;
   }
 
-  .col-businesses .col-scroll {
+  .chats-split:not(.chats-split--stack) .col-businesses .col-scroll {
     max-height: 200px;
   }
 
-  .col-dialogs .col-scroll {
+  .chats-split:not(.chats-split--stack) .col-dialogs .col-scroll {
     max-height: 240px;
   }
 
-  .col-thread {
+  .chats-split:not(.chats-split--stack) .col-thread {
     min-height: min(55vh, 480px);
     max-height: min(65vh, 560px);
   }

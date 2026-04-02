@@ -76,34 +76,50 @@ const loading = ref(false);
 const error = ref('');
 
 const userUiUrl = (import.meta.env.VITE_USER_UI_URL || (import.meta.env.DEV ? 'http://localhost:5173' : '')).replace(/\/$/, '');
+const ownerAppPublicUrl = (import.meta.env.VITE_OWNER_APP_PUBLIC_URL || '').replace(/\/$/, '');
+
+function originOfAppBase(base) {
+  if (!base) return '';
+  try {
+    return new URL(base.startsWith('http') ? base : `https://${base}`).origin;
+  } catch {
+    return '';
+  }
+}
 
 function buildPostLoginUrl(token) {
-  const base = userUiUrl || '';
-  if (!base) {
+  const userOrigin = originOfAppBase(userUiUrl);
+  const ownerOrigin = originOfAppBase(ownerAppPublicUrl);
+  const defaultBase = userUiUrl || ownerAppPublicUrl || '';
+  if (!defaultBase) {
     return '';
   }
   const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
   const rawReturn = params.get('return');
   if (!rawReturn) {
-    return `${base}/#token=${encodeURIComponent(token)}`;
+    return `${defaultBase}/#token=${encodeURIComponent(token)}`;
   }
   let decoded;
   try {
     decoded = decodeURIComponent(rawReturn);
   } catch {
-    return `${base}/#token=${encodeURIComponent(token)}`;
+    return `${defaultBase}/#token=${encodeURIComponent(token)}`;
   }
   try {
-    const allowedBase = `${base.replace(/\/$/, '')}/`;
     const u = /^https?:\/\//i.test(decoded)
       ? new URL(decoded)
-      : new URL(decoded.replace(/^\//, '/'), allowedBase);
-    if (u.origin !== new URL(allowedBase).origin) {
-      return `${base}/#token=${encodeURIComponent(token)}`;
+      : new URL(decoded.replace(/^\//, '/'), `${userUiUrl || ownerAppPublicUrl}/`);
+    const allowed =
+      (userOrigin && u.origin === userOrigin) || (ownerOrigin && u.origin === ownerOrigin);
+    if (!allowed) {
+      return `${defaultBase}/#token=${encodeURIComponent(token)}`;
     }
-    return `${base.replace(/\/$/, '')}${u.pathname}${u.search}#token=${encodeURIComponent(token)}`;
+    const targetBase =
+      ownerOrigin && u.origin === ownerOrigin ? ownerAppPublicUrl : userUiUrl;
+    const base = (targetBase || defaultBase).replace(/\/$/, '');
+    return `${base}${u.pathname}${u.search}#token=${encodeURIComponent(token)}`;
   } catch {
-    return `${base}/#token=${encodeURIComponent(token)}`;
+    return `${defaultBase}/#token=${encodeURIComponent(token)}`;
   }
 }
 
@@ -120,8 +136,9 @@ const handleSubmit = async () => {
         code: code.value
       });
       const token = data?.data?.token;
-      if (!token || !userUiUrl) {
-        error.value = 'Не получен токен или не задан VITE_USER_UI_URL';
+      if (!token || (!userUiUrl && !ownerAppPublicUrl)) {
+        error.value =
+          'Не получен токен или не задан VITE_USER_UI_URL / VITE_OWNER_APP_PUBLIC_URL';
         return;
       }
       window.location.href = buildPostLoginUrl(token);

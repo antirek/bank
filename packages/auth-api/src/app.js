@@ -12,7 +12,13 @@ const app = express();
 const PORT = config.apps.authApi.port;
 const CORS_ORIGIN = config.corsOrigin;
 
-app.use(cors({ origin: CORS_ORIGIN }));
+app.use(
+  cors(
+    config.nodeEnv === 'development'
+      ? { origin: true }
+      : { origin: CORS_ORIGIN }
+  )
+);
 app.use(express.json());
 
 // В production отдаём собранный auth-ui (SPA)
