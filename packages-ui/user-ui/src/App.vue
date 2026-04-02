@@ -8,15 +8,45 @@
 </template>
 
 <script setup>
-import { provide, computed } from 'vue';
+import { provide, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAuthStore } from './stores/auth';
+import { useChatRealtimeStore } from './stores/chatRealtime';
 import { UserHeader } from '@boqq/ui';
+import { ensureAudioUnlocked } from './utils/incomingMessageSound.js';
 
 const authStore = useAuthStore();
+const chatRealtime = useChatRealtimeStore();
 const route = useRoute();
 const hideChrome = computed(() => Boolean(route.meta.hideChrome));
 provide('authStore', authStore);
+
+watch(
+  () => authStore.token,
+  (token) => {
+    if (token) {
+      chatRealtime.connect(token);
+    } else {
+      chatRealtime.disconnect();
+    }
+  },
+  { immediate: true }
+);
+
+const unlockNotificationAudio = () => {
+  ensureAudioUnlocked();
+};
+
+onMounted(() => {
+  window.addEventListener('pointerdown', unlockNotificationAudio, { passive: true });
+  window.addEventListener('keydown', unlockNotificationAudio, { passive: true });
+});
+
+onUnmounted(() => {
+  chatRealtime.disconnect();
+  window.removeEventListener('pointerdown', unlockNotificationAudio);
+  window.removeEventListener('keydown', unlockNotificationAudio);
+});
 </script>
 
 <style>

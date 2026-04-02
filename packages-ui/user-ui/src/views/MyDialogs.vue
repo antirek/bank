@@ -98,9 +98,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import { useChatRealtimeStore } from '../stores/chatRealtime';
 import api from '@boqq/api-client';
 
 const props = defineProps({
@@ -113,6 +114,9 @@ const props = defineProps({
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const chatRealtime = useChatRealtimeStore();
+
+let unsubRealtime = null;
 
 const dialogs = ref([]);
 const loading = ref(true);
@@ -265,7 +269,14 @@ const sendMessage = async () => {
   sending.value = true;
   try {
     const response = await api.post(`/dialogs/${selectedDialogId.value}/messages`, { content });
-    messages.value.push(response.data.data);
+    const data = response.data.data;
+    const mid = data?.messageId;
+    if (
+      mid == null ||
+      !messages.value.some((m) => String(m.messageId) === String(mid))
+    ) {
+      messages.value.push(data);
+    }
     await markDialogRead();
     await nextTick();
     scrollToBottom();
@@ -291,6 +302,42 @@ const handleScroll = () => {
   }
 };
 
+const handleRealtimeMessage = (msg) => {
+  if (msg.type !== 'message.new') return;
+  const id = String(msg.dialogId);
+  const idx = dialogs.value.findIndex((d) => String(d.dialogId) === id);
+  if (idx === -1) {
+    loadDialogs();
+    return;
+  }
+  const m = msg.message;
+  const prev = dialogs.value[idx];
+  const next = [...dialogs.value];
+  next[idx] = {
+    ...prev,
+    lastMessage: { content: m?.content || '' },
+    lastMessageAt: m?.createdAt ?? prev.lastMessageAt
+  };
+  if (id !== selectedDialogId.value) {
+    next[idx] = {
+      ...next[idx],
+      unreadCount: (prev.unreadCount || 0) + 1
+    };
+  }
+  dialogs.value = next;
+
+  if (id === selectedDialogId.value && m?.messageId) {
+    if (
+      !messages.value.some(
+        (x) => String(x.messageId) === String(m.messageId)
+      )
+    ) {
+      messages.value.push(m);
+      nextTick(() => scrollToBottom());
+    }
+  }
+};
+
 watch(
   () => selectedDialogId.value,
   async (newDialogId) => {
@@ -306,7 +353,13 @@ watch(
 );
 
 onMounted(async () => {
+  unsubRealtime = chatRealtime.subscribe(handleRealtimeMessage);
   await loadDialogs();
+});
+
+onUnmounted(() => {
+  unsubRealtime?.();
+  unsubRealtime = null;
 });
 </script>
 

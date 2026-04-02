@@ -11,7 +11,13 @@ export const config = {
     authApi: {
       port: process.env.AUTH_API_PORT || 3102,
     },
+    wsServer: {
+      port: Number(process.env.WS_SERVER_PORT) || 3103,
+    },
   },
+
+  /** AMQP URL для подписки на MMS3 exchange `chat3_updates` (ws-server). */
+  rabbitmqAmqp: process.env.RABBITMQ_AMQP || 'amqp://rmuser:rmpassword@192.168.95.8:5672',
   nodeEnv: process.env.NODE_ENV || 'development',
 
   mongodbUri: process.env.MONGODB_URI || 'mongodb://localhost:27017/bank',

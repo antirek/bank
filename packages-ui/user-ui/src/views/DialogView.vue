@@ -65,6 +65,7 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import { useChatRealtimeStore } from '../stores/chatRealtime';
 import api from '@boqq/api-client';
 
 const props = defineProps({
@@ -85,6 +86,9 @@ const props = defineProps({
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const chatRealtime = useChatRealtimeStore();
+
+let unsubRealtime = null;
 
 const messages = ref([]);
 const messageText = ref('');
@@ -235,8 +239,14 @@ const sendMessage = async () => {
       content
     });
 
-    // Добавляем сообщение в список
-    messages.value.push(response.data.data);
+    const data = response.data.data;
+    const mid = data?.messageId;
+    if (
+      mid == null ||
+      !messages.value.some((m) => String(m.messageId) === String(mid))
+    ) {
+      messages.value.push(data);
+    }
     
     // Скроллим вниз
     await nextTick();
@@ -274,9 +284,27 @@ const handleScroll = () => {
 };
 
 onMounted(async () => {
+  unsubRealtime = chatRealtime.subscribe((msg) => {
+    if (msg.type !== 'message.new') return;
+    if (String(msg.dialogId) !== String(props.dialogId)) return;
+    const mid = msg.message?.messageId;
+    if (
+      mid == null ||
+      messages.value.some((m) => String(m.messageId) === String(mid))
+    ) {
+      return;
+    }
+    messages.value.push(msg.message);
+    nextTick(() => scrollToBottom());
+  });
   await loadDialog();
   await loadMessages();
   messageInput.value?.focus();
+});
+
+onUnmounted(() => {
+  unsubRealtime?.();
+  unsubRealtime = null;
 });
 
 watch(() => props.dialogId, async (newId) => {
