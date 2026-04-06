@@ -1,0 +1,6 @@
+{
+  "name": "@boqq/owner-pwa-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Сборка owner-pwa копируется в public; раздаётся пакетом @boqq/owner-api"
+}

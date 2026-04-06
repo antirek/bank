@@ -27,6 +27,17 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  owner-api:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    command: ["npm", "run", "start:owner-api"]
+    ports:
+      - "3105:3105"
+    env_file:
+      - deploy/.env
+    restart: unless-stopped
+
   mongodb:
     image: mongo:7
     ports:

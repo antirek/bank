@@ -1,0 +1,3 @@
+# Содержимое заполняется сборкой (Docker); в репозитории только .gitkeep
+public/*
+!public/.gitkeep

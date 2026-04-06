@@ -14,7 +14,11 @@ export default defineConfig(({ mode }) => {
   const themeColor = env.VITE_THEME_COLOR || '#5c6bc0';
   const bgColor = env.VITE_PWA_BACKGROUND_COLOR || '#f0f2f8';
 
+  let base = env.VITE_BASE_PATH || '/';
+  if (base !== '/' && !base.endsWith('/')) base = `${base}/`;
+
   return {
+    base,
     plugins: [
       vue(),
       VitePWA({
@@ -26,8 +30,8 @@ export default defineConfig(({ mode }) => {
           short_name: shortName,
           description:
             env.VITE_PWA_DESCRIPTION || 'Чаты с клиентами для владельцев бизнеса',
-          start_url: '/',
-          scope: '/',
+          start_url: base,
+          scope: base,
           display: 'standalone',
           display_override: ['standalone', 'minimal-ui', 'browser'],
           orientation: 'portrait-primary',
@@ -36,7 +40,7 @@ export default defineConfig(({ mode }) => {
           lang: 'ru',
           icons: [
             {
-              src: '/icon-pwa.svg',
+              src: `${base}icon-pwa.svg`,
               sizes: '512x512',
               type: 'image/svg+xml',
               purpose: 'any maskable'

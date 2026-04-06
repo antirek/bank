@@ -21,6 +21,7 @@
     "dev:auth-ui:wait-api": "wait-on tcp:127.0.0.1:3102 && npm run dev -w @boqq/auth-ui",
     "start:user-api": "npm start -w @boqq/user-api",
     "start:auth-api": "npm start -w @boqq/auth-api",
+    "start:owner-api": "npm start -w @boqq/owner-api",
     "build:ui": "npm run build:user-ui && npm run build:auth-ui && npm run build:owner-pwa",
     "build:user-ui": "npm run build -w @boqq/user-ui",
     "build:auth-ui": "npm run build -w @boqq/auth-ui",
@@ -28,6 +29,7 @@
     "dev:owner-pwa:wait-api": "wait-on tcp:127.0.0.1:3101 && npm run dev -w @boqq/owner-pwa",
     "build:owner-pwa": "npm run build -w @boqq/owner-pwa",
     "preview:owner-pwa": "npm run preview -w @boqq/owner-pwa",
+    "dev:owner-api": "npm run dev -w @boqq/owner-api",
     "preview:user-ui": "npm run preview -w @boqq/user-ui",
     "preview:auth-ui": "npm run preview -w @boqq/auth-ui",
     "install:all": "npm install"
