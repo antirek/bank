@@ -1,6 +1,7 @@
 <template>
   <div class="login-page">
-    <div class="login-card">
+    <div v-if="configLoading" class="login-card login-card--loading">Загрузка…</div>
+    <div v-else class="login-card">
       <h1>Вход в Boqq</h1>
       <p class="subtitle">Система общения бизнеса и клиентов</p>
 
@@ -59,7 +60,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import axios from 'axios';
 
 const authApiUrl = import.meta.env.VITE_AUTH_API_URL || '';
@@ -74,9 +75,39 @@ const code = ref('');
 const codeSent = ref(false);
 const loading = ref(false);
 const error = ref('');
+const configLoading = ref(true);
 
-const userUiUrl = (import.meta.env.VITE_USER_UI_URL || (import.meta.env.DEV ? 'http://localhost:5173' : '')).replace(/\/$/, '');
-const ownerAppPublicUrl = (import.meta.env.VITE_OWNER_APP_PUBLIC_URL || '').replace(/\/$/, '');
+const userUiUrl = ref(
+  (import.meta.env.VITE_USER_UI_URL || (import.meta.env.DEV ? 'http://localhost:5173' : '')).replace(
+    /\/$/,
+    ''
+  )
+);
+const ownerAppPublicUrl = ref(
+  (import.meta.env.VITE_OWNER_APP_PUBLIC_URL || '').replace(/\/$/, '')
+);
+
+async function loadPublicConfig() {
+  try {
+    const res = await fetch('/public-config.json', { cache: 'no-store' });
+    if (!res.ok) return;
+    const j = await res.json();
+    if (j.userUiUrl && String(j.userUiUrl).trim()) {
+      userUiUrl.value = String(j.userUiUrl).replace(/\/$/, '');
+    }
+    if (j.ownerAppPublicUrl && String(j.ownerAppPublicUrl).trim()) {
+      ownerAppPublicUrl.value = String(j.ownerAppPublicUrl).replace(/\/$/, '');
+    }
+  } catch {
+    /* остаются VITE_* */
+  } finally {
+    configLoading.value = false;
+  }
+}
+
+onMounted(() => {
+  loadPublicConfig();
+});
 
 function originOfAppBase(base) {
   if (!base) return '';
@@ -88,9 +119,11 @@ function originOfAppBase(base) {
 }
 
 function buildPostLoginUrl(token) {
-  const userOrigin = originOfAppBase(userUiUrl);
-  const ownerOrigin = originOfAppBase(ownerAppPublicUrl);
-  const defaultBase = userUiUrl || ownerAppPublicUrl || '';
+  const uu = userUiUrl.value;
+  const ou = ownerAppPublicUrl.value;
+  const userOrigin = originOfAppBase(uu);
+  const ownerOrigin = originOfAppBase(ou);
+  const defaultBase = uu || ou || '';
   if (!defaultBase) {
     return '';
   }
@@ -108,14 +141,13 @@ function buildPostLoginUrl(token) {
   try {
     const u = /^https?:\/\//i.test(decoded)
       ? new URL(decoded)
-      : new URL(decoded.replace(/^\//, '/'), `${userUiUrl || ownerAppPublicUrl}/`);
+      : new URL(decoded.replace(/^\//, '/'), `${uu || ou}/`);
     const allowed =
       (userOrigin && u.origin === userOrigin) || (ownerOrigin && u.origin === ownerOrigin);
     if (!allowed) {
       return `${defaultBase}/#token=${encodeURIComponent(token)}`;
     }
-    const targetBase =
-      ownerOrigin && u.origin === ownerOrigin ? ownerAppPublicUrl : userUiUrl;
+    const targetBase = ownerOrigin && u.origin === ownerOrigin ? ou : uu;
     const base = (targetBase || defaultBase).replace(/\/$/, '');
     return `${base}${u.pathname}${u.search}#token=${encodeURIComponent(token)}`;
   } catch {
@@ -136,9 +168,9 @@ const handleSubmit = async () => {
         code: code.value
       });
       const token = data?.data?.token;
-      if (!token || (!userUiUrl && !ownerAppPublicUrl)) {
+      if (!token || (!userUiUrl.value && !ownerAppPublicUrl.value)) {
         error.value =
-          'Не получен токен или не задан VITE_USER_UI_URL / VITE_OWNER_APP_PUBLIC_URL';
+          'Не получен токен или не заданы URL приложений (PUBLIC_USER_UI_URL / PUBLIC_OWNER_APP_URL на auth-api или VITE_* при сборке)';
         return;
       }
       window.location.href = buildPostLoginUrl(token);
@@ -159,6 +191,11 @@ const resetForm = () => {
 </script>
 
 <style scoped>
+.login-card--loading {
+  text-align: center;
+  color: #666;
+}
+
 .login-page {
   min-height: 100vh;
   display: flex;

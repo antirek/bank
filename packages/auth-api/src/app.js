@@ -6,6 +6,7 @@ import { existsSync } from 'fs';
 import { config } from '@boqq/shared/config';
 import { ready } from '@boqq/shared/models';
 import authRoutes from './routes/auth.js';
+import { getPublicConfigPayload } from './publicConfig.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -21,13 +22,20 @@ app.use(
 );
 app.use(express.json());
 
-// В production отдаём собранный auth-ui (SPA)
 const staticDir = path.join(__dirname, '../public');
+
+app.get('/health', (req, res) => res.json({ ok: true }));
+
+app.get('/public-config.json', (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.type('application/json');
+  res.json(getPublicConfigPayload());
+});
+
+// В production отдаём собранный auth-ui (SPA) — после /public-config.json и /health
 if (config.nodeEnv === 'production' && existsSync(staticDir)) {
   app.use(express.static(staticDir));
 }
-
-app.get('/health', (req, res) => res.json({ ok: true }));
 
 const router = express.Router();
 authRoutes(router);
@@ -54,6 +62,14 @@ const start = async () => {
     await ready;
     app.listen(PORT, () => {
       console.log(`Auth API running on port ${PORT}`);
+      if (config.nodeEnv === 'production') {
+        const p = getPublicConfigPayload();
+        if (!p.userUiUrl || !p.ownerAppPublicUrl) {
+          console.warn(
+            '[auth-api] Для корректного return после входа задайте PUBLIC_USER_UI_URL и PUBLIC_OWNER_APP_URL'
+          );
+        }
+      }
     });
   } catch (e) {
     console.error('Failed to start:', e);
