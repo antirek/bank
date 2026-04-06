@@ -33,6 +33,13 @@ const api = axios.create({
   }
 });
 
+/** Смена базы API после загрузки runtime-конфига (например owner-pwa с owner-api). */
+export function setApiBaseURL(url) {
+  if (url != null && String(url).trim() !== '') {
+    api.defaults.baseURL = String(url).trim();
+  }
+}
+
 api.interceptors.request.use(
   (config) => {
     const token = resolveAuthToken();

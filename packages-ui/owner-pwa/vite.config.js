@@ -50,7 +50,7 @@ export default defineConfig(({ mode }) => {
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,svg,png,webp,woff2}'],
           navigateFallback: 'index.html',
-          navigateFallbackDenylist: [/^\/api\//],
+          navigateFallbackDenylist: [/^\/api\//, /^\/runtime-config\.json$/],
           runtimeCaching: [
             {
               urlPattern: ({ url }) =>
@@ -76,6 +76,10 @@ export default defineConfig(({ mode }) => {
         allow: [path.resolve(__dirname, '..')]
       },
       proxy: {
+        '/runtime-config.json': {
+          target: 'http://127.0.0.1:3105',
+          changeOrigin: true
+        },
         '/api': {
           target: 'http://localhost:3101',
           changeOrigin: true

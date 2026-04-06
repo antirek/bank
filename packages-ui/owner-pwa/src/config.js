@@ -1,39 +1,68 @@
-/**
- * Все публичные URL и заголовки для owner-PWA задаются через переменные окружения Vite (VITE_*).
- * См. `.env.example` в корне пакета.
- */
+import { reactive } from 'vue';
+import { setApiBaseURL } from '@boqq/api-client';
 
 function trimSlash(s) {
   return String(s || '').replace(/\/$/, '');
 }
 
-export const ownerAppConfig = {
-  appTitle: import.meta.env.VITE_APP_TITLE || 'Boqq — чаты',
+function buildDefaults() {
+  const apiEnv = import.meta.env.VITE_API_BASE_URL;
+  const apiBaseUrl =
+    apiEnv != null && String(apiEnv).trim() !== '' ? String(apiEnv).trim() : '/api';
 
-  /** База user-api (как @boqq/api-client в user-ui). */
-  apiBaseUrl: import.meta.env.VITE_API_BASE_URL || '/api',
+  return {
+    appTitle:
+      (import.meta.env.VITE_APP_TITLE && String(import.meta.env.VITE_APP_TITLE)) || 'Boqq — чаты',
 
-  /**
-   * Публичный origin этого приложения (без слэша в конце).
-   * Нужен для ?return= после входа через auth-ui (тот же JWT, что и у клиентского приложения).
-   */
-  ownerPublicOrigin: trimSlash(
-    import.meta.env.VITE_OWNER_APP_PUBLIC_URL ||
-      (import.meta.env.DEV ? 'http://localhost:5175' : '')
-  ),
+    apiBaseUrl,
 
-  authUiUrl: trimSlash(
-    import.meta.env.VITE_AUTH_UI_URL ||
-      (import.meta.env.DEV ? 'http://localhost:5174' : '')
-  ),
+    ownerPublicOrigin: trimSlash(
+      import.meta.env.VITE_OWNER_APP_PUBLIC_URL ||
+        (import.meta.env.DEV ? 'http://localhost:5175' : '')
+    ),
 
-  /** Пусто в dev → WebSocket на тот же хост, путь /ws (прокси Vite). */
-  wsUrl: trimSlash(import.meta.env.VITE_WS_URL || '')
-};
+    authUiUrl: trimSlash(
+      import.meta.env.VITE_AUTH_UI_URL || (import.meta.env.DEV ? 'http://localhost:5174' : '')
+    ),
+
+    wsUrl: trimSlash(import.meta.env.VITE_WS_URL || '')
+  };
+}
+
+/** Реактивно обновляется после fetch /runtime-config.json */
+export const ownerAppConfig = reactive(buildDefaults());
+
+setApiBaseURL(ownerAppConfig.apiBaseUrl);
 
 /**
- * В production при старте проверяем, что критичные переменные заданы (иначе приложение не монтируется).
+ * Подмешивает ответ owner-api (поля только с непустыми значениями).
+ * @param {Record<string, string|undefined>} json
  */
+export function applyOwnerRuntimeConfig(json) {
+  if (!json || typeof json !== 'object') return;
+  if (json.appTitle) ownerAppConfig.appTitle = String(json.appTitle);
+  if (json.publicUrl) ownerAppConfig.ownerPublicOrigin = trimSlash(String(json.publicUrl));
+  if (json.authUiUrl) ownerAppConfig.authUiUrl = trimSlash(String(json.authUiUrl));
+  if (json.apiBaseUrl != null && String(json.apiBaseUrl).trim() !== '') {
+    ownerAppConfig.apiBaseUrl = String(json.apiBaseUrl).trim();
+  }
+  if (json.wsUrl !== undefined) {
+    ownerAppConfig.wsUrl = json.wsUrl ? trimSlash(String(json.wsUrl)) : '';
+  }
+  setApiBaseURL(ownerAppConfig.apiBaseUrl);
+}
+
+export async function loadOwnerRuntimeConfig() {
+  try {
+    const res = await fetch('/runtime-config.json', { cache: 'no-store' });
+    if (!res.ok) return;
+    const data = await res.json();
+    applyOwnerRuntimeConfig(data);
+  } catch {
+    /* dev без owner-api — остаются VITE_* */
+  }
+}
+
 export function assertOwnerAppConfig() {
   if (!import.meta.env.PROD) return;
 
@@ -41,30 +70,30 @@ export function assertOwnerAppConfig() {
   const problems = [];
 
   if (!c.ownerPublicOrigin || !/^https?:\/\//i.test(c.ownerPublicOrigin)) {
-    problems.push('VITE_OWNER_APP_PUBLIC_URL (https://owner.…)');
+    problems.push('OWNER_PUBLIC_URL (owner-api) или VITE_OWNER_APP_PUBLIC_URL (сборка)');
   }
   if (!c.authUiUrl || !/^https?:\/\//i.test(c.authUiUrl)) {
-    problems.push('VITE_AUTH_UI_URL');
+    problems.push('OWNER_AUTH_UI_URL (owner-api) или VITE_AUTH_UI_URL');
   }
   if (
     !c.apiBaseUrl ||
     (!/^https?:\/\//i.test(c.apiBaseUrl) && c.apiBaseUrl !== '/api')
   ) {
-    problems.push('VITE_API_BASE_URL (абсолютный https://…/api или /api за тем же origin)');
+    problems.push('OWNER_API_BASE_URL (owner-api) или VITE_API_BASE_URL');
   }
 
   const apiIsAbsolute = /^https?:\/\//i.test(c.apiBaseUrl);
   if (apiIsAbsolute && !c.wsUrl) {
     problems.push(
-      'VITE_WS_URL (wss://… при вынесенном API на другой хост; иначе WS по относительному пути не достучится)'
+      'OWNER_WS_URL (owner-api) или VITE_WS_URL — нужен wss:// при API на другом origin'
     );
   }
   if (c.wsUrl && !/^wss?:\/\//i.test(c.wsUrl)) {
-    problems.push('VITE_WS_URL (должен начинаться с ws:// или wss://)');
+    problems.push('wsUrl должен начинаться с ws:// или wss://');
   }
 
   if (problems.length) {
-    const msg = `[owner-pwa] Задайте в .env для production:\n- ${problems.join('\n- ')}`;
+    const msg = `[owner-pwa] Задайте env в owner-api или VITE_* при сборке:\n- ${problems.join('\n- ')}`;
     console.error(msg);
     throw new Error(msg);
   }

@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync } from 'fs';
+import { getRuntimeConfigPayload } from './runtimeConfig.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.resolve(__dirname, '../../owner-pwa/public');
@@ -17,6 +18,13 @@ const app = express();
 app.disable('x-powered-by');
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
+
+app.get('/runtime-config.json', (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.type('application/json');
+  res.json(getRuntimeConfigPayload());
+});
+
 app.use(express.static(publicDir));
 
 app.use((req, res, next) => {
@@ -30,4 +38,11 @@ app.use((req, res, next) => {
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`owner-api → http://0.0.0.0:${PORT} (${publicDir})`);
+  if (process.env.NODE_ENV === 'production') {
+    const need = ['OWNER_PUBLIC_URL', 'OWNER_AUTH_UI_URL', 'OWNER_API_BASE_URL', 'OWNER_WS_URL'];
+    const miss = need.filter((k) => !process.env[k]?.trim());
+    if (miss.length) {
+      console.warn(`[owner-api] В production задайте env: ${miss.join(', ')}`);
+    }
+  }
 });
