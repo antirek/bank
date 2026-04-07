@@ -83,10 +83,17 @@ export function assertOwnerAppConfig() {
   }
 
   const apiIsAbsolute = /^https?:\/\//i.test(c.apiBaseUrl);
-  if (apiIsAbsolute && !c.wsUrl) {
-    problems.push(
-      'OWNER_WS_URL (owner-api) или VITE_WS_URL — нужен wss:// при API на другом origin'
-    );
+  if (apiIsAbsolute && !c.wsUrl && typeof window !== 'undefined') {
+    try {
+      const apiOrigin = new URL(c.apiBaseUrl).origin;
+      if (apiOrigin !== window.location.origin) {
+        problems.push(
+          'OWNER_WS_URL (owner-api) или VITE_WS_URL — нужен wss://, если API на другом origin, чем это приложение'
+        );
+      }
+    } catch {
+      problems.push('OWNER_API_BASE_URL: невалидный абсолютный URL');
+    }
   }
   if (c.wsUrl && !/^wss?:\/\//i.test(c.wsUrl)) {
     problems.push('wsUrl должен начинаться с ws:// или wss://');

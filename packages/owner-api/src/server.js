@@ -39,7 +39,7 @@ app.use((req, res, next) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`owner-api → http://0.0.0.0:${PORT} (${publicDir})`);
   if (process.env.NODE_ENV === 'production') {
-    const need = ['OWNER_PUBLIC_URL', 'OWNER_AUTH_UI_URL', 'OWNER_API_BASE_URL', 'OWNER_WS_URL'];
+    const need = ['OWNER_PUBLIC_URL', 'OWNER_AUTH_UI_URL', 'OWNER_API_BASE_URL'];
     const miss = need.filter((k) => !process.env[k]?.trim());
     if (miss.length) {
       console.warn(`[owner-api] В production задайте env: ${miss.join(', ')}`);

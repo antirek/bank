@@ -39,6 +39,10 @@ app.use((req, _res, next) => {
 
 const staticDir = path.join(__dirname, '../public');
 
+/** Не отдавать index.html вместо отсутствующих .js/.css — иначе Chrome: net::ERR_BLOCKED_BY_ORB. */
+const SPA_FALLBACK_SKIP =
+  /\.(js|mjs|cjs|css|map|json|ico|png|jpe?g|gif|webp|svg|woff2?|ttf|eot|wasm)$/i;
+
 app.get('/public-config.json', (_req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.type('application/json');
@@ -47,6 +51,12 @@ app.get('/public-config.json', (_req, res) => {
 
 // В production отдаём frontend (SPA) — после /public-config.json
 if (config.nodeEnv === 'production' && existsSync(staticDir)) {
+  const widgetPath = path.join(staticDir, 'boqq-widget.js');
+  if (!existsSync(widgetPath)) {
+    console.warn(
+      '[user-api] Нет файла public/boqq-widget.js — пересоберите user-ui (Vite копирует из public/). Иначе /boqq-widget.js отдастся как HTML.'
+    );
+  }
   app.use(express.static(staticDir));
 }
 
@@ -81,6 +91,9 @@ const startServer = async () => {
     app.use((req, res) => {
       // SPA fallback: в production отдаём index.html для клиентских маршрутов
       if (config.nodeEnv === 'production' && existsSync(staticDir)) {
+        if (SPA_FALLBACK_SKIP.test(req.path)) {
+          return res.status(404).type('text/plain').send('Not found');
+        }
         const indexHtml = path.join(staticDir, 'index.html');
         if (existsSync(indexHtml)) {
           return res.sendFile(indexHtml);

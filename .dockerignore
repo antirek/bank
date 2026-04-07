@@ -7,7 +7,10 @@ node_modules
 !.env.example
 !.env.production
 **/dist
-**/public
+# Не использовать **/public — иначе из контекста пропадёт packages-ui/*/public (boqq-widget.js и т.д.).
+# Собранную статику API перезаписываем из образа frontend-build; в контекст хоста тащить не нужно.
+packages/user-api/public
+packages/auth-api/public
 .cursor
 *.md
 !README.md
