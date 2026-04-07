@@ -98,15 +98,15 @@
               >
                 <span class="action-icon action-icon--subscribed" aria-hidden="true">✓</span>
               </span>
-              <a
+              <router-link
                 v-if="!authStore.isAuthenticated"
-                :href="authUiUrl"
+                :to="loginRoute"
                 class="btn btn-primary btn-icon-header"
                 title="Войти"
                 aria-label="Войти"
               >
                 <span class="action-icon" aria-hidden="true">🔑</span>
-              </a>
+              </router-link>
             </div>
           </div>
           <p v-if="business.description" class="description">
@@ -392,7 +392,15 @@ import DialogView from './DialogView.vue';
 
 const route = useRoute();
 const authStore = useAuthStore();
-const authUiUrl = import.meta.env.VITE_AUTH_UI_URL || 'http://localhost:5174';
+
+const loginRoute = computed(() => ({
+  path: '/login',
+  query:
+    typeof window !== 'undefined' && window.location.href
+      ? { return: window.location.href }
+      : {}
+}));
+
 const business = ref(null);
 const news = ref([]);
 /** Вкладка контента: по умолчанию задаётся после загрузки новостей. */

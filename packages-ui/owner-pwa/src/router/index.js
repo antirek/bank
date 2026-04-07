@@ -16,18 +16,32 @@ const router = createRouter({
   routes
 });
 
+function redirectToOwnerLogin(to) {
+  const base = ownerAppConfig.ownerPublicOrigin.replace(/\/$/, '');
+  const returnUrl = new URL(to.fullPath, `${base}/`).href;
+  const ret = encodeURIComponent(returnUrl);
+  window.location.href = `${ownerAppConfig.authUiUrl}?return=${ret}`;
+}
+
 router.beforeEach(async (to, _from, next) => {
+  if (!to.meta.requiresAuth) {
+    next();
+    return;
+  }
+
   const authStore = useAuthStore();
 
-  if (authStore.token && !authStore.user) {
+  if (!authStore.token) {
+    redirectToOwnerLogin(to);
+    return;
+  }
+
+  if (!authStore.user) {
     await authStore.restoreUser();
   }
 
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    const base = ownerAppConfig.ownerPublicOrigin.replace(/\/$/, '');
-    const returnUrl = new URL(to.fullPath, `${base}/`).href;
-    const ret = encodeURIComponent(returnUrl);
-    window.location.href = `${ownerAppConfig.authUiUrl}?return=${ret}`;
+  if (!authStore.token || !authStore.user) {
+    redirectToOwnerLogin(to);
     return;
   }
 

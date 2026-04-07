@@ -38,16 +38,19 @@ async function bootstrap() {
   };
 
   const tokenFromUrl = extractTokenFromLocation();
-  if (tokenFromUrl && typeof localStorage !== 'undefined') {
-    localStorage.setItem('token', tokenFromUrl);
-    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}` || '/');
-  }
 
   const app = createApp(App);
   const pinia = createPinia();
 
   app.use(pinia);
   setAuthTokenGetter(() => useAuthStore().token);
+
+  const authStore = useAuthStore();
+  if (tokenFromUrl) {
+    authStore.setToken(tokenFromUrl);
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}` || '/');
+  }
+
   app.use(router);
 
   api.interceptors.response.use(
@@ -75,12 +78,7 @@ async function bootstrap() {
 
   app.mount('#app');
 
-  const authStore = useAuthStore();
-  const storedToken = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
-  if (storedToken && !authStore.token) {
-    authStore.setToken(storedToken);
-  }
-  if (authStore.token) {
+  if (authStore.token && !authStore.user) {
     authStore.restoreUser();
   }
 }

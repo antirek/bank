@@ -1,7 +1,7 @@
 <template>
   <div class="home">
     <header class="header">
-      <h1>Bank</h1>
+      <h1>Boqq</h1>
       <p>Система общения бизнеса и клиентов</p>
       <div class="auth-section">
       <div v-if="authStore.isAuthenticated" class="user-info">
@@ -10,7 +10,7 @@
         </router-link>
         <button @click="handleLogout" class="btn-logout">Выйти</button>
       </div>
-        <a v-else :href="authUiUrl" class="btn-login">Войти</a>
+        <router-link v-else to="/login" class="btn-login">Войти</router-link>
       </div>
     </header>
     <main class="main">
@@ -49,8 +49,6 @@ import api from '@boqq/api-client';
 
 const router = useRouter();
 const authStore = useAuthStore();
-const authUiUrl = import.meta.env.VITE_AUTH_UI_URL || 'http://localhost:5174';
-
 const apiStatus = ref('checking');
 const apiStatusText = ref('Проверка...');
 

@@ -86,8 +86,6 @@ import DialogView from './DialogView.vue';
 const route = useRoute();
 const authStore = useAuthStore();
 
-const authUiUrl = (import.meta.env.VITE_AUTH_UI_URL || 'http://localhost:5174').replace(/\/$/, '');
-
 const business = ref(null);
 const loading = ref(true);
 const error = ref('');
@@ -102,8 +100,10 @@ const embedPageUrl = computed(() => {
 });
 
 const loginReturnUrl = computed(() => {
-  const ret = encodeURIComponent(embedPageUrl.value);
-  return `${authUiUrl}/?return=${ret}`;
+  if (typeof window === 'undefined') return '/login';
+  const u = new URL('/login', window.location.origin);
+  u.searchParams.set('return', embedPageUrl.value);
+  return `${u.pathname}${u.search}`;
 });
 
 const poweredByHref = computed(() => {
