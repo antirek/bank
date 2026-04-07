@@ -16,6 +16,10 @@ export default defineConfig({
     host: process.env.DEV_SERVER_HOST || true,
     port: 5173,
     proxy: {
+      '/public-config.json': {
+        target: 'http://localhost:3101',
+        changeOrigin: true
+      },
       '/api': {
         target: 'http://localhost:3101',
         changeOrigin: true

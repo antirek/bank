@@ -3,8 +3,9 @@
     <template v-if="misconfig">
       <p class="redirect-page__title">Неверная настройка входа</p>
       <p class="redirect-page__hint">
-        <strong>VITE_AUTH_UI_URL</strong> указывает на этот же сайт. Задайте отдельный URL приложения
-        входа (например другой поддомен), пересоберите user-ui и auth-ui.
+        URL входа указывает на этот же сайт. На user-api задайте
+        <strong>PUBLIC_AUTH_UI_URL</strong> на отдельный поддомен auth или
+        <strong>VITE_AUTH_UI_URL</strong> при сборке.
       </p>
       <p class="redirect-page__code">Сейчас: {{ authUiUrl || '(пусто)' }}</p>
     </template>

@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia';
 import { playIncomingMessageSound } from '../utils/incomingMessageSound.js';
+import { getWsUrlOverride } from '../config/publicRuntime';
 
 function buildWsUrl(token) {
-  const explicit = import.meta.env.VITE_WS_URL;
+  const explicit = getWsUrlOverride();
   if (explicit) {
     const base = explicit.replace(/\/$/, '');
     const sep = base.includes('?') ? '&' : '?';

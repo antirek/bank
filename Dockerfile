@@ -7,7 +7,8 @@ COPY packages ./packages
 COPY packages-ui ./packages-ui
 COPY packages-shared ./packages-shared
 
-# Общие URL для встройки в user-ui / auth-ui / owner-pwa (переопределите при деплое)
+# Встройка в статику Vite (дефолты / fallback). user-ui подмешивает домены из GET /public-config.json (user-api).
+# Полный набор: ./build.sh + deploy/.env.build или --build-arg (см. deploy/env.build.example).
 ARG VITE_USER_UI_URL=http://localhost:3101
 ARG VITE_AUTH_UI_URL=http://localhost:3102
 ARG VITE_OWNER_APP_PUBLIC_URL=http://localhost:3105

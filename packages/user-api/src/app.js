@@ -14,6 +14,7 @@ import * as businessController from './controllers/businessController.js';
 import * as dialogController from './controllers/dialogController.js';
 import * as newsController from './controllers/newsController.js';
 import * as subscriptionController from './controllers/subscriptionController.js';
+import { getUserApiPublicConfigPayload } from './publicConfig.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -36,8 +37,15 @@ app.use((req, _res, next) => {
   next();
 });
 
-// В production отдаём собранный frontend (SPA)
 const staticDir = path.join(__dirname, '../public');
+
+app.get('/public-config.json', (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.type('application/json');
+  res.json(getUserApiPublicConfigPayload());
+});
+
+// В production отдаём frontend (SPA) — после /public-config.json
 if (config.nodeEnv === 'production' && existsSync(staticDir)) {
   app.use(express.static(staticDir));
 }
@@ -83,6 +91,11 @@ const startServer = async () => {
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
       console.log(`OpenAPI spec: http://localhost:${PORT}/api/api-docs`);
+      if (config.nodeEnv === 'production' && !process.env.PUBLIC_AUTH_UI_URL?.trim()) {
+        console.warn(
+          '[user-api] Задайте PUBLIC_AUTH_UI_URL — иначе user-ui возьмёт URL входа из сборки (Vite)'
+        );
+      }
     });
   } catch (error) {
     console.error('Failed to start server:', error);

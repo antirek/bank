@@ -1,8 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import { userPublicRuntime } from '../config/publicRuntime';
 import Home from '../views/Home.vue';
-
-const authUiUrl = import.meta.env.VITE_AUTH_UI_URL || 'http://localhost:5174';
 
 const routes = [
   {
@@ -187,7 +186,11 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    window.location.href = authUiUrl;
+    const u =
+      userPublicRuntime.authUiUrl?.trim() ||
+      import.meta.env.VITE_AUTH_UI_URL ||
+      'http://localhost:5174';
+    window.location.href = u;
     return;
   }
   next();

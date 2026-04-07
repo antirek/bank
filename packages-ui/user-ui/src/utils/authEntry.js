@@ -1,15 +1,17 @@
-/** Базовый URL страницы входа (auth-ui), без завершающего /. */
+import { userPublicRuntime } from '../config/publicRuntime';
+
 export function getAuthUiBase() {
+  const r = userPublicRuntime.authUiUrl?.trim();
+  if (r) return r.replace(/\/$/, '');
   return (import.meta.env.VITE_AUTH_UI_URL || 'http://localhost:5174').replace(/\/$/, '');
 }
 
 /**
- * Типичная ошибка деплоя: auth-ui раздаётся с того же origin и пути /, что и user-ui —
- * редирект открывает снова главную с «Bank».
+ * Та же SPA в корне этого origin, что и клиент — вход зациклится.
  */
 export function isAuthUiSameAppRoot() {
   if (typeof window === 'undefined') return false;
-  const raw = (import.meta.env.VITE_AUTH_UI_URL || '').trim();
+  const raw = getAuthUiBase();
   if (!raw) return true;
   try {
     const a = new URL(raw.includes('://') ? raw : `https://${raw}`);
