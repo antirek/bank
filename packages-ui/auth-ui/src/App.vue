@@ -63,10 +63,12 @@
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 
-const authApiUrl = import.meta.env.VITE_AUTH_API_URL || '';
-
+// До fetch /public-config.json: dev — прокси /auth-api; prod — '' (тот же origin).
+// После ответа бэкенда: apiBaseUrl из JSON перезаписывает axios.defaults.baseURL.
 const api = axios.create({
-  baseURL: authApiUrl || (import.meta.env.DEV ? '/auth-api' : ''),
+  baseURL: import.meta.env.DEV
+    ? (import.meta.env.VITE_AUTH_API_URL?.trim() || '/auth-api')
+    : '',
   headers: { 'Content-Type': 'application/json' }
 });
 
@@ -92,6 +94,9 @@ async function loadPublicConfig() {
     const res = await fetch('/public-config.json', { cache: 'no-store' });
     if (!res.ok) return;
     const j = await res.json();
+    if (j.apiBaseUrl != null && String(j.apiBaseUrl).trim() !== '') {
+      api.defaults.baseURL = String(j.apiBaseUrl).replace(/\/$/, '');
+    }
     if (j.userUiUrl && String(j.userUiUrl).trim()) {
       userUiUrl.value = String(j.userUiUrl).replace(/\/$/, '');
     }
@@ -99,7 +104,7 @@ async function loadPublicConfig() {
       ownerAppPublicUrl.value = String(j.ownerAppPublicUrl).replace(/\/$/, '');
     }
   } catch {
-    /* остаются VITE_* */
+    /* остаются VITE_* и дефолтный baseURL */
   } finally {
     configLoading.value = false;
   }

@@ -2,8 +2,14 @@
   <div class="news-feed-page">
     <div class="container">
       <div class="header">
-        <h1>Лента</h1>
-        <p class="subtitle">Новости бизнесов, на которые вы подписаны</p>
+        <h1>{{ globalFeed ? 'Новости' : 'Лента' }}</h1>
+        <p class="subtitle">
+          {{
+            globalFeed
+              ? 'Последние новости всех бизнесов'
+              : 'Новости бизнесов, на которые вы подписаны'
+          }}
+        </p>
       </div>
 
       <div v-if="loading" class="loading">
@@ -15,11 +21,12 @@
       </div>
 
       <div v-else-if="items.length === 0" class="empty-state">
-        <p>Пока здесь пусто — подпишитесь на бизнесы, чтобы видеть их новости в этой ленте.</p>
+        <p v-if="globalFeed">Пока нет опубликованных новостей.</p>
+        <p v-else>Пока здесь пусто — подпишитесь на бизнесы, чтобы видеть их новости в этой ленте.</p>
         <router-link to="/catalog" class="btn btn-primary">
-          Перейти в каталог
+          Каталог бизнесов
         </router-link>
-        <router-link to="/my/profile/subscriptions" class="btn btn-secondary">
+        <router-link v-if="!globalFeed" to="/my/profile/subscriptions" class="btn btn-secondary">
           Мои подписки
         </router-link>
       </div>
@@ -50,9 +57,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, watch } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import api from '@boqq/api-client';
+
+const props = defineProps({
+  globalFeed: { type: Boolean, default: false }
+});
 
 const authStore = useAuthStore();
 const items = ref([]);
@@ -76,6 +87,11 @@ async function loadFeed() {
   loading.value = true;
   error.value = '';
   try {
+    if (props.globalFeed) {
+      const res = await api.get('/news/feed', { params: { limit: 30 } });
+      items.value = Array.isArray(res.data?.data) ? res.data.data : [];
+      return;
+    }
     const userId = authStore.user?.userId;
     if (!userId) {
       error.value = 'Не удалось определить пользователя';
@@ -90,7 +106,14 @@ async function loadFeed() {
   }
 }
 
-onMounted(loadFeed);
+// Один и тот же компонент на `/` и `/my/feed` — экземпляр переиспользуется, onMounted не вызывается снова.
+watch(
+  () => props.globalFeed,
+  () => {
+    loadFeed();
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped>

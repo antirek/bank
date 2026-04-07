@@ -1,28 +1,45 @@
 <template>
-  <div v-if="authStore?.isAuthenticated && !authStore?.isRestoring" class="user-header">
+  <div class="user-header">
     <div class="user-header-content">
-      <div class="user-header-left">
-        <router-link to="/my/profile" class="user-info-link">
-          <div class="avatar-mini">
-            {{ userInitials }}
-          </div>
-          <div class="user-details">
-            <span class="user-name">{{ authStore.user?.name || authStore.user?.phone || 'Пользователь' }}</span>
-            <span class="user-phone">{{ authStore.user?.phone }}</span>
-          </div>
-        </router-link>
-        <nav class="user-nav user-nav--near-user" aria-label="Лента и чаты">
-        <router-link to="/my/feed" class="nav-link">Лента</router-link>
-        <router-link to="/my/dialogs" class="nav-link">Чаты</router-link>
+      <router-link to="/" class="brand-link">Boqq</router-link>
+
+      <template v-if="authStore?.isAuthenticated && !authStore?.isRestoring">
+        <div class="user-header-left">
+          <router-link to="/my/profile" class="user-info-link">
+            <div class="avatar-mini">
+              {{ userInitials }}
+            </div>
+            <div class="user-details">
+              <span class="user-name">{{ authStore.user?.name || authStore.user?.phone || 'Пользователь' }}</span>
+              <span class="user-phone">{{ authStore.user?.phone }}</span>
+            </div>
+          </router-link>
+          <nav class="user-nav user-nav--near-user" aria-label="Лента и чаты">
+            <router-link to="/my/feed" class="nav-link">Лента</router-link>
+            <router-link to="/my/dialogs" class="nav-link">Чаты</router-link>
+          </nav>
+        </div>
+        <div class="user-header-right">
+          <router-link to="/my/profile/businesses" class="nav-link">Мои бизнесы</router-link>
+          <router-link to="/catalog" class="nav-link">Каталог</router-link>
+          <button type="button" @click="handleLogout" class="btn-logout-mini" title="Выйти">
+            Выйти
+          </button>
+        </div>
+      </template>
+
+      <template v-else-if="authStore?.token && authStore?.isRestoring">
+        <div class="user-header-fill" />
+        <span class="header-hint">Загрузка…</span>
+      </template>
+
+      <template v-else>
+        <div class="user-header-fill" />
+        <nav class="user-header-right user-header-guest" aria-label="Навигация">
+          <router-link to="/catalog" class="nav-link">Каталог</router-link>
+          <router-link to="/login" class="btn-login-header">Войти</router-link>
         </nav>
-      </div>
-      <div class="user-header-right">
-        <router-link to="/my/profile/businesses" class="nav-link">Мои бизнесы</router-link>
-        <router-link to="/catalog" class="nav-link">Каталог</router-link>
-        <button @click="handleLogout" class="btn-logout-mini" title="Выйти">
-          Выйти
-        </button>
-      </div>
+      </template>
     </div>
   </div>
 </template>
@@ -51,7 +68,7 @@ const userInitials = computed(() => {
 
 const handleLogout = () => {
   authStore?.logout();
-  router.push('/login');
+  router.push('/');
 };
 </script>
 
@@ -72,6 +89,56 @@ const handleLogout = () => {
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+
+.brand-link {
+  flex-shrink: 0;
+  font-weight: 700;
+  font-size: 1.2rem;
+  letter-spacing: -0.02em;
+  color: #4c63d2;
+  text-decoration: none;
+  line-height: 1;
+}
+
+.brand-link:hover {
+  color: #5568d3;
+}
+
+.user-header-fill {
+  flex: 1;
+  min-width: 0;
+}
+
+.header-hint {
+  flex-shrink: 0;
+  font-size: 0.9rem;
+  color: #888;
+}
+
+.btn-login-header {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+}
+
+.btn-login-header:hover {
+  opacity: 0.92;
+  color: #fff;
+}
+
+.user-header-guest {
+  margin-left: 0;
 }
 
 .user-header-left {

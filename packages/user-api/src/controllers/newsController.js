@@ -173,3 +173,40 @@ export const getUserNewsFeed = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+/** Публичная лента: последние новости по всем бизнесам (для главной страницы). */
+export const getGlobalNewsFeed = async (req, res) => {
+  try {
+    const raw = parseInt(req.query.limit, 10);
+    const limit = Number.isFinite(raw) && raw > 0 ? Math.min(raw, 100) : 30;
+
+    const news = await News.find({ isActive: true })
+      .sort({ createdAt: -1 })
+      .limit(limit);
+
+    const businessIdsInNews = [...new Set(news.map((n) => n.businessId))];
+    const businesses = await Business.find({
+      businessId: { $in: businessIdsInNews }
+    });
+
+    const businessMap = {};
+    businesses.forEach((b) => {
+      businessMap[b.businessId] = b;
+    });
+
+    const newsWithBusiness = news.map((newsItem) => ({
+      ...newsItem.toObject(),
+      business: businessMap[newsItem.businessId]
+        ? {
+            businessId: businessMap[newsItem.businessId].businessId,
+            name: businessMap[newsItem.businessId].name,
+            slug: businessMap[newsItem.businessId].slug
+          }
+        : null
+    }));
+
+    res.json({ data: newsWithBusiness });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

@@ -1,13 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
 import { userPublicRuntime } from '../config/publicRuntime';
-import Home from '../views/Home.vue';
-
 const routes = [
   {
     path: '/',
     name: 'Home',
-    component: Home
+    component: () => import('../views/NewsFeed.vue'),
+    props: () => ({ globalFeed: true })
   },
   {
     path: '/login',
@@ -72,6 +71,7 @@ const routes = [
     path: '/my/feed',
     name: 'NewsFeed',
     component: () => import('../views/NewsFeed.vue'),
+    props: () => ({ globalFeed: false }),
     meta: { requiresAuth: true }
   },
   {

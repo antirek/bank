@@ -7,28 +7,16 @@ COPY packages ./packages
 COPY packages-ui ./packages-ui
 COPY packages-shared ./packages-shared
 
-# Встройка в статику Vite (дефолты / fallback). user-ui подмешивает домены из GET /public-config.json (user-api).
-# Полный набор: ./build.sh + deploy/.env.build или --build-arg (см. deploy/env.build.example).
-ARG VITE_USER_UI_URL=http://localhost:3101
-ARG VITE_AUTH_UI_URL=http://localhost:3102
-ARG VITE_OWNER_APP_PUBLIC_URL=http://localhost:3105
-# Owner на отдельном origin → абсолютные URL до user-api и ws-server
-ARG VITE_OWNER_API_BASE_URL=http://localhost:3101/api
-ARG VITE_OWNER_WS_URL=ws://localhost:3103/ws
-
-ENV VITE_USER_UI_URL=$VITE_USER_UI_URL \
-    VITE_AUTH_UI_URL=$VITE_AUTH_UI_URL \
-    VITE_OWNER_APP_PUBLIC_URL=$VITE_OWNER_APP_PUBLIC_URL
-
+# Публичные URL не вшиваем: user-ui — GET /public-config.json (user-api),
+# auth-ui — /public-config.json (auth-api), owner-pwa — /runtime-config.json (owner-api).
+# Здесь только fallback для dev-сборки (/api с того же origin, что отдаёт SPA).
 RUN npm ci --ignore-scripts --include=dev
 
-# Клиентский UI и auth: тот же origin, что и API
 ENV VITE_API_BASE_URL=/api
 RUN npm run build:user-ui && npm run build:auth-ui
 
-# Owner PWA (поддомен / отдельный порт)
-ENV VITE_API_BASE_URL=$VITE_OWNER_API_BASE_URL \
-    VITE_WS_URL=$VITE_OWNER_WS_URL
+# Owner: до рантайма в бандле только относительные пути; реальные URL подставляет owner-api.
+ENV VITE_WS_URL=
 RUN npm run build -w @boqq/owner-pwa
 
 # --- Stage 2: app (Node) — user-api / auth-api / owner-api (статика в packages/owner-pwa/public) ---

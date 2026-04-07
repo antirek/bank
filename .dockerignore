@@ -1,0 +1,16 @@
+node_modules
+.git
+.gitignore
+*.log
+.env
+.env.*
+!.env.example
+!.env.production
+**/dist
+**/public
+.cursor
+*.md
+!README.md
+terminals
+agent-transcripts
+.playwright-mcp
