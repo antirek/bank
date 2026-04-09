@@ -1,0 +1,17 @@
+{
+  "name": "@boqq/push-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Web Push из событий MMS3 Rabbit (exchange events, message.create)",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "@boqq/shared": "*",
+    "amqplib": "^0.10.3",
+    "web-push": "^3.6.7"
+  }
+}

@@ -14,6 +14,7 @@ import * as businessController from './controllers/businessController.js';
 import * as dialogController from './controllers/dialogController.js';
 import * as newsController from './controllers/newsController.js';
 import * as subscriptionController from './controllers/subscriptionController.js';
+import * as pushSubscriptionController from './controllers/pushSubscriptionController.js';
 import { getUserApiPublicConfigPayload } from './publicConfig.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -74,6 +75,7 @@ const startServer = async () => {
         dialogController,
         newsController,
         subscriptionController,
+        pushSubscriptionController,
         authenticate
       },
       docsPath: '/api-docs',

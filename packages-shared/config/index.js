@@ -56,6 +56,20 @@ export const config = {
     apiKey: process.env.MMS3_API_KEY || 'chat3_f3d5f7101d9b1f56284c648e107630f30ed6444883d9d91d0fc74e04120fdd98',
     tenantId: process.env.MMS3_TENANT_ID || 'tnt_default',
   },
+
+  /** Web Push (push-worker + публичный ключ в owner-api runtime-config). */
+  vapidPublicKey: (process.env.VAPID_PUBLIC_KEY || '').trim(),
+  vapidPrivateKey: (process.env.VAPID_PRIVATE_KEY || '').trim(),
+  vapidSubject: (process.env.VAPID_SUBJECT || 'mailto:noreply@localhost').trim(),
+
+  /** Абсолютный URL owner-pwa для data.url в push (как OWNER_PUBLIC_URL). */
+  ownerPwaPublicUrl: (process.env.OWNER_PUBLIC_URL || '').trim().replace(/\/+$/, ''),
+
+  /** MMS3 Rabbit: exchange `events` (или иной), см. документацию тенанта. */
+  rabbitmqEventsExchange: (process.env.RABBITMQ_EVENTS_EXCHANGE || 'events').trim(),
+  rabbitmqEventsExchangeType: (process.env.RABBITMQ_EVENTS_EXCHANGE_TYPE || 'topic').trim(),
+  rabbitmqEventsQueue: (process.env.RABBITMQ_EVENTS_QUEUE || 'boqq_push_worker').trim(),
+  rabbitmqEventsBindingKey: (process.env.RABBITMQ_EVENTS_BINDING_KEY || '#').trim(),
 };
 
 export default config;

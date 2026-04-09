@@ -20,6 +20,8 @@
     "@vitejs/plugin-vue": "^4.5.0",
     "sharp": "^0.33.5",
     "vite": "^5.0.5",
-    "vite-plugin-pwa": "^1.2.0"
+    "vite-plugin-pwa": "^1.2.0",
+    "workbox-precaching": "^7.4.0",
+    "workbox-routing": "^7.4.0"
   }
 }

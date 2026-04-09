@@ -26,7 +26,9 @@ function buildDefaults() {
       import.meta.env.VITE_AUTH_UI_URL || (import.meta.env.DEV ? 'http://localhost:5174' : '')
     ),
 
-    wsUrl: trimSlash(import.meta.env.VITE_WS_URL || '')
+    wsUrl: trimSlash(import.meta.env.VITE_WS_URL || ''),
+
+    vapidPublicKey: ''
   };
 }
 
@@ -49,6 +51,9 @@ export function applyOwnerRuntimeConfig(json) {
   }
   if (json.wsUrl !== undefined) {
     ownerAppConfig.wsUrl = json.wsUrl ? trimSlash(String(json.wsUrl)) : '';
+  }
+  if (json.vapidPublicKey != null && String(json.vapidPublicKey).trim() !== '') {
+    ownerAppConfig.vapidPublicKey = String(json.vapidPublicKey).trim();
   }
   setApiBaseURL(ownerAppConfig.apiBaseUrl);
 }

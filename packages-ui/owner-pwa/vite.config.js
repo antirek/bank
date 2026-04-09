@@ -22,8 +22,15 @@ export default defineConfig(({ mode }) => {
     plugins: [
       vue(),
       VitePWA({
+        strategies: 'injectManifest',
+        srcDir: 'src',
+        filename: 'sw.js',
         registerType: 'prompt',
         injectRegister: 'auto',
+        injectManifest: {
+          globPatterns: ['**/*.{js,css,html,ico,svg,png,webp,woff2}'],
+          globIgnores: ['**/node_modules/**/*']
+        },
         includeAssets: ['icon-pwa.svg', 'vite.svg', 'pwa-192.png', 'pwa-512.png'],
         manifest: {
           id: base === '/' ? '/' : base.replace(/\/$/, ''),
@@ -64,18 +71,6 @@ export default defineConfig(({ mode }) => {
               sizes: '512x512',
               type: 'image/svg+xml',
               purpose: 'any'
-            }
-          ]
-        },
-        workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,svg,png,webp,woff2}'],
-          navigateFallback: 'index.html',
-          navigateFallbackDenylist: [/^\/api\//, /^\/runtime-config\.json$/],
-          runtimeCaching: [
-            {
-              urlPattern: ({ url }) =>
-                url.origin === self.location.origin && url.pathname.startsWith('/api'),
-              handler: 'NetworkOnly'
             }
           ]
         },

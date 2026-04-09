@@ -9,6 +9,7 @@
 import { watch, onMounted, onUnmounted } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { useChatRealtimeStore } from '@/stores/chatRealtime';
+import { usePushNotificationsStore } from '@/stores/pushNotifications';
 import { ensureAudioUnlocked } from '@/utils/incomingMessageSound.js';
 import OfflineGate from '@/components/OfflineGate.vue';
 import PwaUpdateBar from '@/components/PwaUpdateBar.vue';
@@ -16,12 +17,14 @@ import PwaInstallInvite from '@/components/PwaInstallInvite.vue';
 
 const authStore = useAuthStore();
 const chatRealtime = useChatRealtimeStore();
+const pushNotifications = usePushNotificationsStore();
 
 watch(
   () => authStore.token,
   (token) => {
     if (token) {
       chatRealtime.connect(token);
+      pushNotifications.syncIfSubscribed();
     } else {
       chatRealtime.disconnect();
     }
