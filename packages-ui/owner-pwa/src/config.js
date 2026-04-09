@@ -1,5 +1,5 @@
 import { reactive } from 'vue';
-import { setApiBaseURL } from '@boqq/api-client';
+import { normalizeUserApiBaseUrl, setApiBaseURL } from '@boqq/api-client';
 
 function trimSlash(s) {
   return String(s || '').replace(/\/$/, '');
@@ -7,8 +7,9 @@ function trimSlash(s) {
 
 function buildDefaults() {
   const apiEnv = import.meta.env.VITE_API_BASE_URL;
-  const apiBaseUrl =
-    apiEnv != null && String(apiEnv).trim() !== '' ? String(apiEnv).trim() : '/api';
+  const apiBaseUrl = normalizeUserApiBaseUrl(
+    apiEnv != null && String(apiEnv).trim() !== '' ? String(apiEnv).trim() : '/api'
+  );
 
   return {
     appTitle:
@@ -44,7 +45,7 @@ export function applyOwnerRuntimeConfig(json) {
   if (json.publicUrl) ownerAppConfig.ownerPublicOrigin = trimSlash(String(json.publicUrl));
   if (json.authUiUrl) ownerAppConfig.authUiUrl = trimSlash(String(json.authUiUrl));
   if (json.apiBaseUrl != null && String(json.apiBaseUrl).trim() !== '') {
-    ownerAppConfig.apiBaseUrl = String(json.apiBaseUrl).trim();
+    ownerAppConfig.apiBaseUrl = normalizeUserApiBaseUrl(String(json.apiBaseUrl).trim());
   }
   if (json.wsUrl !== undefined) {
     ownerAppConfig.wsUrl = json.wsUrl ? trimSlash(String(json.wsUrl)) : '';

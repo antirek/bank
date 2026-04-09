@@ -14,6 +14,52 @@ function isMms3Unavailable(error) {
 }
 
 /**
+ * Гарантирует, что пользователь Boqq есть в MMS3 и в Mongo есть mms3UserId.
+ * Сначала GET (как init-mms3.js), затем POST — иначе POST часто падает, если юзер уже в MMS3, а поле в БД пустое.
+ */
+async function ensureMms3UserForBoqqUser(userDoc) {
+  if (userDoc.mms3UserId) {
+    return;
+  }
+  const mms3UserId = userDoc.userId.replace(/\./g, '_');
+  const displayName = userDoc.name || userDoc.phone || 'User';
+
+  try {
+    await mms3Client.get(`/users/${mms3UserId}`);
+    userDoc.mms3UserId = mms3UserId;
+    await userDoc.save();
+    try {
+      await mms3Client.put(`/users/${mms3UserId}`, { name: displayName });
+    } catch {
+      /* имя в MMS3 не критично */
+    }
+    return;
+  } catch (getErr) {
+    const st = getErr.response?.status;
+    if (st !== 404) {
+      throw getErr;
+    }
+  }
+
+  try {
+    await mms3Client.post('/users', {
+      userId: mms3UserId,
+      name: displayName,
+      type: 'user'
+    });
+    userDoc.mms3UserId = mms3UserId;
+    await userDoc.save();
+  } catch (postErr) {
+    if (postErr.response?.status === 409) {
+      userDoc.mms3UserId = mms3UserId;
+      await userDoc.save();
+      return;
+    }
+    throw postErr;
+  }
+}
+
+/**
  * Ответ MMS3 на создание сущности: поля то на корне тела, то внутри data (как у списков .data[]).
  */
 function unwrapMms3CreatedResource(axiosResponse) {
@@ -76,49 +122,28 @@ export const startDialog = async (req, res) => {
       return res.status(404).json({ error: 'Business owner not found' });
     }
 
-    // Проверяем и инициализируем пользователей в mms3, если нужно
-    if (!user.mms3UserId) {
-      const mms3UserId = user.userId.replace(/\./g, '_');
-      try {
-        await mms3Client.post('/users', {
-          userId: mms3UserId,
-          name: user.name || user.phone,
-          type: 'user'
+    try {
+      await ensureMms3UserForBoqqUser(user);
+    } catch (mms3UserError) {
+      if (isMms3Unavailable(mms3UserError)) {
+        return res.status(503).json({
+          error: 'Сервис сообщений временно недоступен. Пожалуйста, попробуйте позже.'
         });
-        user.mms3UserId = mms3UserId;
-        await user.save();
-      } catch (mms3UserError) {
-        if (mms3UserError.response?.status === 409) {
-          // Пользователь уже существует
-          user.mms3UserId = mms3UserId;
-          await user.save();
-        } else {
-          console.error('Error creating user in mms3:', mms3UserError.response?.data || mms3UserError.message);
-          return res.status(500).json({ error: 'Failed to initialize user in mms3' });
-        }
       }
+      console.error('Error syncing client user to mms3:', mms3UserError.response?.data || mms3UserError.message);
+      return res.status(500).json({ error: 'Failed to initialize user in mms3' });
     }
-    
-    if (!owner.mms3UserId) {
-      const mms3UserId = owner.userId.replace(/\./g, '_');
-      try {
-        await mms3Client.post('/users', {
-          userId: mms3UserId,
-          name: owner.name || owner.phone,
-          type: 'user'
+
+    try {
+      await ensureMms3UserForBoqqUser(owner);
+    } catch (mms3OwnerError) {
+      if (isMms3Unavailable(mms3OwnerError)) {
+        return res.status(503).json({
+          error: 'Сервис сообщений временно недоступен. Пожалуйста, попробуйте позже.'
         });
-        owner.mms3UserId = mms3UserId;
-        await owner.save();
-      } catch (mms3OwnerError) {
-        if (mms3OwnerError.response?.status === 409) {
-          // Пользователь уже существует
-          owner.mms3UserId = mms3UserId;
-          await owner.save();
-        } else {
-          console.error('Error creating owner in mms3:', mms3OwnerError.response?.data || mms3OwnerError.message);
-          return res.status(500).json({ error: 'Failed to initialize business owner in mms3' });
-        }
       }
+      console.error('Error syncing business owner to mms3:', mms3OwnerError.response?.data || mms3OwnerError.message);
+      return res.status(500).json({ error: 'Failed to initialize business owner in mms3' });
     }
 
     // Создаем диалог в mms3

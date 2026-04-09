@@ -19,12 +19,32 @@ function resolveAuthToken() {
   return null;
 }
 
-const baseURL =
+/**
+ * Частая ошибка в env: `https://woqq.ru` без пути — тогда axios даёт `/businesses` на корне сайта (SPA), а не user-api.
+ * Если в URL только origin (путь `/` или пусто), добавляем суффикс `/api` как у nginx + express-openapi.
+ */
+export function normalizeUserApiBaseUrl(url) {
+  const s = String(url || '').trim().replace(/\/+$/, '');
+  if (!s || !/^https?:\/\//i.test(s)) return s;
+  try {
+    const u = new URL(s);
+    if (u.pathname === '/' || u.pathname === '') {
+      return `${u.origin}/api`.replace(/\/+$/, '');
+    }
+  } catch {
+    /* ignore */
+  }
+  return s;
+}
+
+const rawInitialBase =
   typeof import.meta !== 'undefined' &&
   import.meta.env &&
   import.meta.env.VITE_API_BASE_URL
     ? import.meta.env.VITE_API_BASE_URL
     : '/api';
+
+const baseURL = normalizeUserApiBaseUrl(rawInitialBase) || rawInitialBase;
 
 const api = axios.create({
   baseURL,
@@ -36,7 +56,7 @@ const api = axios.create({
 /** Смена базы API после загрузки runtime-конфига (например owner-pwa с owner-api). */
 export function setApiBaseURL(url) {
   if (url != null && String(url).trim() !== '') {
-    api.defaults.baseURL = String(url).trim();
+    api.defaults.baseURL = normalizeUserApiBaseUrl(String(url).trim());
   }
 }
 
