@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/generate-pwa-png.mjs",
     "build": "vite build",
     "postbuild": "node scripts/sync-public.mjs",
     "preview": "vite preview"
@@ -17,6 +18,7 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.5.0",
+    "sharp": "^0.33.5",
     "vite": "^5.0.5",
     "vite-plugin-pwa": "^1.2.0"
   }

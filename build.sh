@@ -2,7 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-TAG="${TAG:-0.0.18}"
+TAG="${TAG:-0.0.20}"
 
 docker build -t "antirek/boqq:$TAG" .
 

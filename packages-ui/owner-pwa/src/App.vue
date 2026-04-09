@@ -1,6 +1,7 @@
 <template>
   <OfflineGate />
   <PwaUpdateBar />
+  <PwaInstallInvite />
   <router-view />
 </template>
 
@@ -11,6 +12,7 @@ import { useChatRealtimeStore } from '@/stores/chatRealtime';
 import { ensureAudioUnlocked } from '@/utils/incomingMessageSound.js';
 import OfflineGate from '@/components/OfflineGate.vue';
 import PwaUpdateBar from '@/components/PwaUpdateBar.vue';
+import PwaInstallInvite from '@/components/PwaInstallInvite.vue';
 
 const authStore = useAuthStore();
 const chatRealtime = useChatRealtimeStore();

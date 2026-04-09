@@ -24,8 +24,9 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         registerType: 'prompt',
         injectRegister: 'auto',
-        includeAssets: ['icon-pwa.svg', 'vite.svg'],
+        includeAssets: ['icon-pwa.svg', 'vite.svg', 'pwa-192.png', 'pwa-512.png'],
         manifest: {
+          id: base === '/' ? '/' : base.replace(/\/$/, ''),
           name: appTitle,
           short_name: shortName,
           description:
@@ -38,12 +39,31 @@ export default defineConfig(({ mode }) => {
           theme_color: themeColor,
           background_color: bgColor,
           lang: 'ru',
+          categories: ['business', 'productivity'],
           icons: [
+            {
+              src: `${base}pwa-192.png`,
+              sizes: '192x192',
+              type: 'image/png',
+              purpose: 'any'
+            },
+            {
+              src: `${base}pwa-512.png`,
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'any'
+            },
+            {
+              src: `${base}pwa-512.png`,
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'maskable'
+            },
             {
               src: `${base}icon-pwa.svg`,
               sizes: '512x512',
               type: 'image/svg+xml',
-              purpose: 'any maskable'
+              purpose: 'any'
             }
           ]
         },
