@@ -345,8 +345,18 @@ onMounted(() => {
   if (typeof window !== 'undefined') {
     window.matchMedia(MOBILE_STACK_MQ).addEventListener('change', mqListener);
   }
-  loadBusinesses();
 });
+
+// После появления user (owner-pwa / user-ui) — иначе первый запрос с ownerId=undefined даёт нерелевантный список.
+watch(
+  () => authStore.user?.userId,
+  (userId) => {
+    if (userId) {
+      loadBusinesses();
+    }
+  },
+  { immediate: true }
+);
 
 onUnmounted(() => {
   if (typeof window !== 'undefined' && mqListener) {

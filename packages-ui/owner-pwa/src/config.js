@@ -75,11 +75,12 @@ export function assertOwnerAppConfig() {
   if (!c.authUiUrl || !/^https?:\/\//i.test(c.authUiUrl)) {
     problems.push('OWNER_AUTH_UI_URL (owner-api) или VITE_AUTH_UI_URL');
   }
-  if (
-    !c.apiBaseUrl ||
-    (!/^https?:\/\//i.test(c.apiBaseUrl) && c.apiBaseUrl !== '/api')
-  ) {
+  if (!c.apiBaseUrl) {
     problems.push('OWNER_API_BASE_URL (owner-api) или VITE_API_BASE_URL');
+  } else if (!/^https?:\/\//i.test(c.apiBaseUrl)) {
+    problems.push(
+      'OWNER_API_BASE_URL — полный URL user-api (https://…/api). Относительный /api с домена owner-pwa попадает в owner-api без REST — список бизнесов будет пустым.'
+    );
   }
 
   const apiIsAbsolute = /^https?:\/\//i.test(c.apiBaseUrl);

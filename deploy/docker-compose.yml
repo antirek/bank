@@ -38,6 +38,21 @@ services:
       - deploy/.env
     restart: unless-stopped
 
+  # WebSocket чат (путь /ws). За nginx: proxy_pass на этот порт + заголовки Upgrade (см. deploy/nginx-ws.example.conf)
+  ws-server:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    command: ["npm", "run", "start:ws-server"]
+    ports:
+      - "3103:3103"
+    env_file:
+      - deploy/.env
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
+
   mongodb:
     image: mongo:7
     ports:
