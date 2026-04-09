@@ -57,7 +57,8 @@ services:
     build:
       context: ..
       dockerfile: Dockerfile
-    command: ["npm", "run", "start:push-worker"]
+    # Прямой node — в логах не будет npm при рестарте; stdout только процесса worker
+    command: ["node", "packages/push-worker/src/index.js"]
     env_file:
       - deploy/.env
     depends_on:
